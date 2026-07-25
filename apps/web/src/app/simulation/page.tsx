@@ -4,7 +4,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, RotateCcw, Cpu, Settings, Sliders, PlayCircle } from "lucide-react";
+import { Play, Pause, RotateCcw, Cpu, Sliders, PlayCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function Simulation() {
@@ -26,7 +26,7 @@ export default function Simulation() {
   useEffect(() => {
     connectWebSocket();
     fetchLatestSimulation();
-  }, []);
+  }, [connectWebSocket, fetchLatestSimulation]);
 
   const isRunning = simState.status === "running";
   const speedOptions = [1, 5, 10, 20, 50];

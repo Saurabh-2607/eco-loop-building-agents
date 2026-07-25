@@ -4,7 +4,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Settings, Cpu, Network, ShieldAlert } from "lucide-react";
+import { Cpu, Network, ShieldAlert } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 

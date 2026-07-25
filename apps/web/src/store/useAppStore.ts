@@ -125,8 +125,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
           message: `Feedback for decision ${id} successfully logged.`
         });
       }
-    } catch (e: any) {
-      console.error("Failed submitting feedback:", e);
+    } catch (e) {
+      const err = e as Error;
+      console.error("Failed submitting feedback:", err);
       // Local fallback representation
       set((state) => {
         const updatedDecisions = state.decisions.map((dec) => 
@@ -295,8 +296,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       } else {
         throw new Error(payload.error?.message || "Internal server error");
       }
-    } catch (e: any) {
-      console.error(e);
+    } catch (e) {
+      const err = e as Error;
+      console.error(err);
       get().addLog({
         timestamp: new Date().toLocaleTimeString(),
         level: "ERROR",
@@ -333,8 +335,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       } else {
         throw new Error(payload.error?.message || "Actuators error");
       }
-    } catch (e: any) {
-      console.error(e);
+    } catch (e) {
+      const err = e as Error;
+      console.error(err);
       get().addLog({
         timestamp: new Date().toLocaleTimeString(),
         level: "ERROR",
@@ -350,7 +353,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const res = await fetch(`${API_URL}/api/v1/simulation/results/${simId}`);
       const payload = await res.json();
       if (payload.success && Array.isArray(payload.data)) {
-        const mappedMetrics: SimulationMetric[] = payload.data.map((m: any) => {
+        const mappedMetrics: SimulationMetric[] = payload.data.map((m: {
+          recorded_at: string;
+          temperature: number;
+          humidity: number;
+          occupancy: number;
+          hvac_load: number;
+          lighting_load: number;
+        }) => {
           const recDate = new Date(m.recorded_at);
           const hh = String(recDate.getHours()).padStart(2, "0");
           const mm = String(recDate.getMinutes()).padStart(2, "0");
@@ -466,8 +476,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       } else {
         throw new Error(payload.detail || "Agent workflow crash");
       }
-    } catch (e: any) {
-      console.error(e);
+    } catch (e) {
+      const err = e as Error;
+      console.error(err);
       set({ aiReportLoading: false });
       get().addLog({
         timestamp: new Date().toLocaleTimeString(),
@@ -491,7 +502,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
       let mappedDecisions: AgentDecision[] = [];
       if (recPayload.success && Array.isArray(recPayload.data?.recommendations)) {
-        mappedDecisions = recPayload.data.recommendations.map((r: any, idx: number) => ({
+        mappedDecisions = recPayload.data.recommendations.map((r: { category: string; recommendation: string }, idx: number) => ({
           id: `dec-${idx}-${Date.now()}`,
           timestamp: new Date().toISOString(),
           hvacSetpoint: r.category === "HVAC" ? 24.0 : 22.0,

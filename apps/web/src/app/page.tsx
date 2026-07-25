@@ -17,7 +17,7 @@ export default function Dashboard() {
   useEffect(() => {
     connectWebSocket();
     fetchLatestSimulation();
-  }, []);
+  }, [connectWebSocket, fetchLatestSimulation]);
 
   return (
     <div className="space-y-8 animate-fade-in">

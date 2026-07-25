@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
 import { cn } from "@/lib/utils";
-import { Play, Pause, RefreshCw, Cpu, CheckCircle } from "lucide-react";
+import { Play, Pause, Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 

@@ -89,7 +89,7 @@ export default function AIDecisions() {
     if (runId) {
       fetchAIDecisions(runId);
     }
-  }, [runId]);
+  }, [runId, fetchAIDecisions]);
 
   const handleGenerateAIReport = () => {
     if (runId) {

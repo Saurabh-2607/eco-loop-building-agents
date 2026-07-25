@@ -28,3 +28,7 @@ redis-data/
 .idea/
 .vscode/
 .DS_Store
+simulation/outputs/
+simulation/logs/
+
+simulation/outputs/

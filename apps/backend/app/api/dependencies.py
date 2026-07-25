@@ -2,15 +2,12 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings, Settings
 from app.database.session import get_db
-from app.services.simulation_service import SimulationService
+from app.energyplus.simulation_service import SimulationService
 from app.services.metrics_service import MetricsService
 from app.services.optimization_service import OptimizationService
 from app.services.dashboard_service import DashboardService
 from app.services.health_service import HealthService
-from app.websocket.manager import WebSocketManager
-
-# Global singleton managers
-_ws_manager_instance = WebSocketManager()
+from app.websocket.manager import WebSocketManager, ws_manager
 
 def get_settings() -> Settings:
     """
@@ -22,7 +19,7 @@ def get_websocket_manager() -> WebSocketManager:
     """
     Returns the WebSocket manager singleton.
     """
-    return _ws_manager_instance
+    return ws_manager
 
 def get_simulation_service(db: AsyncSession = Depends(get_db)) -> SimulationService:
     return SimulationService(db)

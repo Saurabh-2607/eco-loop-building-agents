@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from app.services.simulation_service import SimulationService
+from app.energyplus.simulation_service import SimulationService
 from app.services.metrics_service import MetricsService
 from app.services.optimization_service import OptimizationService
 from app.schemas.dashboard import DashboardResponse, SystemStatusResponse

@@ -47,3 +47,6 @@ class WebSocketManager:
         # Cleanup dead websocket connections
         for dead in dead_connections:
             self.disconnect(dead)
+
+# Expose global singleton instance
+ws_manager = WebSocketManager()

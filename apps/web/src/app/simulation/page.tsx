@@ -5,23 +5,34 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Play, Pause, RotateCcw, Cpu, Settings, Sliders, PlayCircle } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Simulation() {
-  const { simState, logs, setSimStatus, setSpeedMultiplier, addLog } = useAppStore();
+  const { 
+    simState, 
+    logs, 
+    setSimStatus, 
+    setSpeedMultiplier, 
+    startSimulation, 
+    applyOverrides,
+    connectWebSocket,
+    fetchLatestSimulation
+  } = useAppStore();
+  
   const [manualHvac, setManualHvac] = useState(22.0);
   const [manualLight, setManualLight] = useState(80);
+
+  // Initialize socket listener and query latest simulation parameters on load
+  useEffect(() => {
+    connectWebSocket();
+    fetchLatestSimulation();
+  }, []);
 
   const isRunning = simState.status === "running";
   const speedOptions = [1, 5, 10, 20, 50];
 
   const handleApplyOverride = () => {
-    addLog({
-      timestamp: new Date().toLocaleTimeString(),
-      level: "WARNING",
-      service: "backend",
-      message: `Manual Actuation applied: HVAC override -> ${manualHvac.toFixed(1)}°C, Light dimming -> ${manualLight}%`
-    });
+    applyOverrides(manualHvac, manualLight);
   };
 
   return (
@@ -49,7 +60,13 @@ export default function Simulation() {
             {/* Run Actions */}
             <div className="flex gap-2">
               <Button 
-                onClick={() => setSimStatus(isRunning ? "paused" : "running")}
+                onClick={() => {
+                  if (isRunning) {
+                    setSimStatus("paused");
+                  } else {
+                    startSimulation("Chicago Office Standard Simulation");
+                  }
+                }}
                 className={`flex-1 font-semibold text-xs h-9 ${isRunning ? "bg-amber-600 hover:bg-amber-700 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white"}`}
               >
                 {isRunning ? (
@@ -60,7 +77,7 @@ export default function Simulation() {
                 ) : (
                   <>
                     <Play className="h-4 w-4 mr-1.5 fill-current" />
-                    Resume Simulation
+                    Start Simulation
                   </>
                 )}
               </Button>

@@ -3,13 +3,19 @@
 import { usePathname } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
 import { cn } from "@/lib/utils";
-import { Play, Pause, Cpu } from "lucide-react";
+import { Play, Pause, Cpu, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { simState, triggerMockOptimization, setSimStatus } = useAppStore();
+  const { 
+    simState, 
+    triggerLiveOptimization, 
+    optimizationLoading, 
+    startSimulation, 
+    setSimStatus 
+  } = useAppStore();
 
   // Determine current page name
   const pageTitle = (() => {
@@ -30,6 +36,7 @@ export default function Navbar() {
   })();
 
   const isRunning = simState.status === "running";
+  const runId = simState.runId;
 
   return (
     <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex items-center justify-between px-8 select-none flex-shrink-0">
@@ -72,7 +79,13 @@ export default function Navbar() {
         <Button 
           size="sm" 
           variant="outline"
-          onClick={() => setSimStatus(isRunning ? "paused" : "running")}
+          onClick={() => {
+            if (isRunning) {
+              setSimStatus("paused");
+            } else {
+              startSimulation(simState.currentModel || "Office Standard Run");
+            }
+          }}
           className="h-8 text-xs font-medium flex items-center gap-1.5"
         >
           {isRunning ? (
@@ -92,11 +105,21 @@ export default function Navbar() {
         {/* Force Optimize Trigger */}
         <Button 
           size="sm"
-          onClick={triggerMockOptimization}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs h-8 flex items-center gap-1.5 shadow-[0_4px_12px_rgba(16,185,129,0.2)] hover:shadow-[0_4px_16px_rgba(16,185,129,0.3)] transition-all"
+          onClick={() => triggerLiveOptimization(runId)}
+          disabled={!runId || optimizationLoading}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs h-8 flex items-center gap-1.5 shadow-[0_4px_12px_rgba(16,185,129,0.2)] hover:shadow-[0_4px_16px_rgba(16,185,129,0.3)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Cpu className="h-3.5 w-3.5" />
-          Force Optimize
+          {optimizationLoading ? (
+            <>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Optimizing...
+            </>
+          ) : (
+            <>
+              <Cpu className="h-3.5 w-3.5" />
+              Force Optimize
+            </>
+          )}
         </Button>
       </div>
     </header>

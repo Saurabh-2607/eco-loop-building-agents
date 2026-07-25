@@ -48,6 +48,8 @@ services:
     depends_on:
       - redis
       - ollama
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - ecoloop-network
 

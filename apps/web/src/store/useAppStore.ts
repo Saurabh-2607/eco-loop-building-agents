@@ -6,7 +6,9 @@ import {
 } from "@/lib/mock-data";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/ws";
+const WS_URL = typeof window !== "undefined"
+  ? `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/ws`
+  : "ws://localhost:8000/ws";
 
 interface AppStore {
   // States
@@ -19,6 +21,7 @@ interface AppStore {
   wsConnected: boolean;
   aiReport: string;
   aiReportLoading: boolean;
+  optimizationLoading: boolean;
 
   // Actions
   setSimStatus: (status: SimulationState["status"]) => void;
@@ -68,6 +71,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   wsConnected: false,
   aiReport: "",
   aiReportLoading: false,
+  optimizationLoading: false,
 
   setSimStatus: (status) => set((state) => {
     const updatedSim = { ...state.simState, status };
@@ -310,6 +314,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // Trigger simulation starting REST API
   startSimulation: async (name: string) => {
     try {
+      set({
+        metrics: [],
+        logs: [],
+        summary: {
+          energy: 0,
+          temperature: 0,
+          occupancy: 0,
+          savings: 0
+        }
+      });
       get().addLog({
         timestamp: new Date().toLocaleTimeString(),
         level: "INFO",
@@ -458,8 +472,25 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // Trigger deterministic optimization pass
   triggerLiveOptimization: async (simId?: string) => {
     try {
+      set({ optimizationLoading: true });
       const activeId = simId || get().simState.runId;
-      if (!activeId) return;
+      if (!activeId) {
+        get().addLog({
+          timestamp: new Date().toLocaleTimeString(),
+          level: "WARNING",
+          service: "optimizer",
+          message: "Cannot run optimization: No active simulation run loaded."
+        });
+        set({ optimizationLoading: false });
+        return;
+      }
+
+      get().addLog({
+        timestamp: new Date().toLocaleTimeString(),
+        level: "INFO",
+        service: "optimizer",
+        message: `Triggering live optimization engine for run: ${activeId}...`
+      });
 
       const res = await fetch(`${API_URL}/api/v1/optimize`, {
         method: "POST",
@@ -478,12 +509,21 @@ export const useAppStore = create<AppStore>((set, get) => ({
           timestamp: new Date().toLocaleTimeString(),
           level: "INFO",
           service: "optimizer",
-          message: `Deterministic optimization pass complete. Saving percent target: ${payload.data.estimated_savings_percent}%`
+          message: `Deterministic optimization completed. Estimated savings: ${payload.data.estimated_savings_percent}%`
         });
         await get().fetchAIDecisions(activeId);
       }
     } catch (e) {
-      console.warn("Failed to trigger optimization rules engine:", e);
+      const err = e as Error;
+      console.warn("Failed to trigger optimization rules engine:", err);
+      get().addLog({
+        timestamp: new Date().toLocaleTimeString(),
+        level: "ERROR",
+        service: "optimizer",
+        message: `Optimization engine request failed: ${err.message}`
+      });
+    } finally {
+      set({ optimizationLoading: false });
     }
   },
 

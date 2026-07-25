@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from app.api.dependencies import get_optimization_service
 from app.services.optimization_service import OptimizationService
-from app.schemas.responses import StandardSuccessResponse
+from app.schemas.common import StandardSuccessResponse
 
 router = APIRouter()
 

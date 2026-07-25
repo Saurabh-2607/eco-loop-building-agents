@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from app.api.dependencies import get_metrics_service
 from app.services.metrics_service import MetricsService
-from app.schemas.responses import StandardSuccessResponse
+from app.schemas.common import StandardSuccessResponse
 
 router = APIRouter()
 
@@ -9,7 +9,7 @@ router = APIRouter()
 async def get_latest_metrics(
     service: MetricsService = Depends(get_metrics_service)
 ):
-    data = await service.get_latest_metrics()
+    data = await service.get_latest_metrics(simulation_id=None)  # Placeholder or get active
     return StandardSuccessResponse(
         success=True,
         data=data,

@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.repositories.base_repository import BaseRepository
 from app.database.models.ai_decision import AIDecision
 
-class AIRepository(BaseRepository[AIDecision]):
+class AIDecisionRepository(BaseRepository[AIDecision]):
     def __init__(self, session: AsyncSession):
         super().__init__(AIDecision, session)
 

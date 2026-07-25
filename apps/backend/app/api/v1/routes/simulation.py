@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from app.api.dependencies import get_simulation_service
 from app.services.simulation_service import SimulationService
 from app.schemas.control import ControlOverrideRequest
-from app.schemas.responses import StandardSuccessResponse
+from app.schemas.common import StandardSuccessResponse
 
 router = APIRouter()
 
@@ -10,7 +10,7 @@ router = APIRouter()
 async def get_simulation_status(
     service: SimulationService = Depends(get_simulation_service)
 ):
-    data = await service.get_simulation_status()
+    data = await service.get_simulation_status(simulation_id=None)  # Placeholder or get active
     return StandardSuccessResponse(
         success=True,
         data=data,

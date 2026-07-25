@@ -1,5 +1,6 @@
 import sys
 import os
+import asyncio
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,7 +11,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app.core.config import settings
 from app.core.logging import setup_logging
+from app.core.custom_exceptions import EcoLoopException
 from app.api.v1.router import api_router
+from app.utils.background_tasks import broadcast_dummy_telemetry_loop
 
 # Initialize Loguru Sinks
 setup_logging()
@@ -42,24 +45,52 @@ app.include_router(ws_router)
 def root():
     return {"status": "running", "version": "1.0.0"}
 
+# Custom Application Exception Handler
+@app.exception_handler(EcoLoopException)
+async def ecoloop_exception_handler(request: Request, exc: EcoLoopException):
+    logger.warning(f"Business logic error caught on path {request.url.path}: [{exc.code}] {exc.message}")
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={
+            "success": False,
+            "error": {
+                "code": exc.code,
+                "message": exc.message
+            }
+        }
+    )
+
 # Global Exception Handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.exception(f"Unhandled exception caught on request path {request.url.path}: {exc}")
-    
-    # Return standardized JSON response format on failure
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
             "success": False,
-            "message": "An unexpected internal server error occurred while processing the request."
+            "error": {
+                "code": "INTERNAL_SERVER_ERROR",
+                "message": "An unexpected internal server error occurred while processing the request."
+            }
         }
     )
 
+# Task reference tracking
+bg_broadcast_task = None
+
 @app.on_event("startup")
 async def startup_event():
+    global bg_broadcast_task
     logger.info("EcoLoop API application started.")
+    bg_broadcast_task = asyncio.create_task(broadcast_dummy_telemetry_loop())
 
 @app.on_event("shutdown")
 async def shutdown_event():
+    global bg_broadcast_task
     logger.info("EcoLoop API application shutting down.")
+    if bg_broadcast_task:
+        bg_broadcast_task.cancel()
+        try:
+            await bg_broadcast_task
+        except asyncio.CancelledError:
+            pass

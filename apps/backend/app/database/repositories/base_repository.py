@@ -22,3 +22,17 @@ class BaseRepository(Generic[T]):
         await self.session.commit()
         await self.session.refresh(obj)
         return obj
+
+    async def update(self, obj: T) -> T:
+        self.session.add(obj)
+        await self.session.commit()
+        await self.session.refresh(obj)
+        return obj
+
+    async def delete(self, id: any) -> bool:
+        obj = await self.get_by_id(id)
+        if obj:
+            await self.session.delete(obj)
+            await self.session.commit()
+            return True
+        return False

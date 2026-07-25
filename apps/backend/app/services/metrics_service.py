@@ -1,45 +1,54 @@
-from typing import List, Dict, Any
+from typing import List, Optional
+from uuid import UUID
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from app.database.repositories.metrics_repository import MetricsRepository
+from app.database.models.metrics import SimulationMetric
+from app.schemas.metrics import MetricCreate
+from app.core.custom_exceptions import DatabaseException
+from loguru import logger
 
 class MetricsService:
-    def __init__(self, repository=None):
-        self.repository = repository
+    def __init__(self, session: AsyncSession):
+        self.session = session
+        self.repository = MetricsRepository(session)
 
-    async def get_latest_metrics(self) -> Dict[str, Any]:
+    async def add_metric(self, payload: MetricCreate) -> SimulationMetric:
         """
-        Get the most recent simulation state metrics.
+        Persists a new sensor metric into the database.
         """
-        # Mock data return
-        return {
-            "timestamp": "2026-07-25T17:59:00Z",
-            "run_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
-            "indoor_temp": 22.4,
-            "outdoor_temp": 28.1,
-            "relative_humidity": 45.5,
-            "occupancy_count": 8.0,
-            "pmv": -0.12,
-            "ppd": 5.4,
-            "hvac_power_kw": 18.2,
-            "lighting_power_kw": 4.5
-        }
+        logger.debug(f"Logging new metrics entry for simulation: {payload.simulation_id}")
+        metric = SimulationMetric(
+            simulation_id=payload.simulation_id,
+            temperature=payload.temperature,
+            humidity=payload.humidity,
+            occupancy=payload.occupancy,
+            energy_usage=payload.energy_usage,
+            hvac_load=payload.hvac_load,
+            lighting_load=payload.lighting_load
+        )
+        try:
+            created_metric = await self.repository.create(metric)
+            return created_metric
+        except Exception as e:
+            logger.error(f"Failed to save simulation metrics: {e}")
+            raise DatabaseException(f"Failed to persist metrics: {e}")
 
-    async def get_historical_metrics(self, run_id: str, limit: int = 100) -> Dict[str, Any]:
+    async def get_latest_metrics(self, simulation_id: UUID) -> Optional[SimulationMetric]:
         """
-        Retrieve a list of historical metrics.
+        Get the most recent metric recorded for a simulation.
         """
-        # Mock data return
-        return {
-            "run_id": run_id,
-            "records_count": 2,
-            "data": [
-                {
-                    "timestamp": "2026-07-25T17:50:00Z",
-                    "indoor_temp": 22.2,
-                    "hvac_power_kw": 19.5
-                },
-                {
-                    "timestamp": "2026-07-25T17:55:00Z",
-                    "indoor_temp": 22.4,
-                    "hvac_power_kw": 18.2
-                }
-            ]
-        }
+        query = (
+            select(SimulationMetric)
+            .where(SimulationMetric.simulation_id == simulation_id)
+            .order_by(SimulationMetric.recorded_at.desc())
+            .limit(1)
+        )
+        result = await self.session.execute(query)
+        return result.scalars().first()
+
+    async def get_historical_metrics(self, simulation_id: UUID, limit: int = 100) -> List[SimulationMetric]:
+        """
+        Get historical database metrics list logs.
+        """
+        return await self.repository.get_by_simulation_id(simulation_id, limit=limit)

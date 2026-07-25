@@ -1,9 +1,10 @@
 from fastapi import APIRouter
-from app.api.v1.routes import health, metrics, simulation, optimization, websocket
+from app.api.v1.routes import health, metrics, simulation, optimization, websocket, dashboard
 
 api_router = APIRouter()
 
-# Mount routes with tag groups
+# Mount routes with tag groups for swagger organisation
+api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 api_router.include_router(health.router, prefix="/health", tags=["health"])
 api_router.include_router(metrics.router, tags=["metrics"])
 api_router.include_router(simulation.router, tags=["simulation"])

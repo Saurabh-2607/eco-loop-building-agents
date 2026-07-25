@@ -1,6 +1,7 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
-from app.api.dependencies import get_websocket_service
-from app.services.websocket_service import WebSocketService
+from app.api.dependencies import get_websocket_manager
+from app.websocket.manager import WebSocketManager
+from uuid import uuid4
 from loguru import logger
 
 router = APIRouter()
@@ -8,17 +9,20 @@ router = APIRouter()
 @router.websocket("/ws/live")
 async def websocket_endpoint(
     websocket: WebSocket,
-    service: WebSocketService = Depends(get_websocket_service)
+    manager: WebSocketManager = Depends(get_websocket_manager)
 ):
-    # Register and accept socket handshake
-    await service.connect(websocket)
+    # Generate client tracking session ID
+    client_id = f"client-{uuid4().hex[:6]}"
     
-    # Send required initial response
-    await websocket.send_text("Connected")
+    # Accept client handshake
+    await manager.connect(websocket, client_id)
+    
+    # Send handshake acknowledgement
+    await websocket.send_json({"event": "HANDSHAKE", "status": "Connected", "client_id": client_id})
     
     try:
         while True:
-            # Receive loop to keep socket alive
+            # Maintain active connection wait state
             await websocket.receive_text()
     except WebSocketDisconnect:
-        service.disconnect(websocket)
+        manager.disconnect(websocket)

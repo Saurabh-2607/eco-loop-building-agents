@@ -7,6 +7,7 @@ from app.services.metrics_service import MetricsService
 from app.services.optimization_service import OptimizationService
 from app.services.dashboard_service import DashboardService
 from app.services.health_service import HealthService
+from app.ai.service import AIService
 from app.websocket.manager import WebSocketManager, ws_manager
 
 def get_settings() -> Settings:
@@ -35,3 +36,6 @@ def get_dashboard_service(db: AsyncSession = Depends(get_db)) -> DashboardServic
 
 def get_health_service(db: AsyncSession = Depends(get_db)) -> HealthService:
     return HealthService(db)
+
+def get_ai_service(db: AsyncSession = Depends(get_db)) -> AIService:
+    return AIService(db)

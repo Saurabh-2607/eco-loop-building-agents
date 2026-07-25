@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.routes import health, metrics, simulation, optimization, websocket, dashboard
+from app.api.v1.routes import health, metrics, simulation, optimization, websocket, dashboard, ai
 
 api_router = APIRouter()
 
@@ -10,3 +10,4 @@ api_router.include_router(metrics.router, tags=["metrics"])
 api_router.include_router(simulation.router, tags=["simulation"])
 api_router.include_router(optimization.router, tags=["optimization"])
 api_router.include_router(websocket.router, tags=["websocket"])
+api_router.include_router(ai.router, prefix="/ai", tags=["ai"])

@@ -36,7 +36,7 @@ def test_feature_extractor():
     assert features.avg_temperature == 22.83  # (25 * 11 + 21 * 13) / 24
     assert features.total_energy_kwh == 2850.0  # (200 * 11 + 50 * 13)
     assert features.occupancy_rate == 0.46     # 11 / 24
-    assert features.peak_load_hour == 8        # First hour of peak load
+    assert features.peak_load_hour == 8        # Peak hour starts at 8:00 (due to base_time at midnight)
 
 def test_optimizer():
     # Setup BuildingFeatures that trigger high temperature and lighting rules
@@ -75,18 +75,19 @@ async def test_optimization_service(db_session):
     await db_session.commit()
     await db_session.refresh(sim)
     
-    # 2. Add some metrics
+    # 2. Add some metrics that trigger the cooling and humidity rules
     base_time = datetime(2026, 7, 25, 0, 0, 0)
     for hour in range(24):
         is_occupied = 8 <= hour <= 18
         metric = SimulationMetric(
             simulation_id=sim.id,
-            temperature=25.5 if is_occupied else 22.0,
-            humidity=62.0 if is_occupied else 48.0,
+            temperature=28.0 if is_occupied else 22.0,
+            humidity=68.0 if is_occupied else 48.0,
             occupancy=40.0 if is_occupied else 0.0,
-            energy_usage=180.0 if is_occupied else 40.0,
+            # Force peak load hour to 14
+            energy_usage=300.0 if hour == 14 else (180.0 if is_occupied else 40.0),
             hvac_load=120.0 if is_occupied else 20.0,
-            lighting_load=40.0 if is_occupied else 10.0,
+            lighting_load=60.0 if is_occupied else 10.0,
             recorded_at=base_time + timedelta(hours=hour)
         )
         db_session.add(metric)

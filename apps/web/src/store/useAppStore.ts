@@ -21,6 +21,8 @@ interface AppStore {
   logs: SystemLog[];
   summary: typeof mockDashboardSummary;
   wsConnected: boolean;
+  aiReport: string;
+  aiReportLoading: boolean;
 
   // Actions
   setSimStatus: (status: SimulationState["status"]) => void;
@@ -29,13 +31,16 @@ interface AppStore {
   submitFeedback: (id: string, feedback: AgentDecision["feedbackStatus"]) => void;
   addLog: (log: Omit<SystemLog, "id">) => void;
   addMetricPoint: (point: SimulationMetric) => void;
-  triggerMockOptimization: () => void;
-
+  
   // Live Integrations API Actions
   connectWebSocket: () => void;
   fetchLatestSimulation: () => Promise<void>;
   startSimulation: (name: string) => Promise<void>;
   applyOverrides: (hvac: number, light: number) => Promise<void>;
+  fetchHistoricalMetrics: (simId: string) => Promise<void>;
+  triggerLiveOptimization: (simId?: string) => Promise<void>;
+  triggerAILangGraphAnalysis: (simId: string) => Promise<void>;
+  fetchAIDecisions: (simId: string) => Promise<void>;
 }
 
 let socket: WebSocket | null = null;
@@ -52,6 +57,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
   logs: mockSystemLogs,
   summary: mockDashboardSummary,
   wsConnected: false,
+  aiReport: "",
+  aiReportLoading: false,
 
   setSimStatus: (status) => set((state) => {
     const updatedSim = { ...state.simState, status };
@@ -87,22 +94,47 @@ export const useAppStore = create<AppStore>((set, get) => ({
     settings: { ...state.settings, ...newSettings }
   })),
 
-  submitFeedback: (id, feedbackStatus) => set((state) => {
-    const updatedDecisions = state.decisions.map((dec) => 
-      dec.id === id ? { ...dec, feedbackStatus } : dec
-    );
-    const newLog: SystemLog = {
-      id: `log-${Date.now()}`,
-      timestamp: new Date().toLocaleTimeString(),
-      level: "INFO",
-      service: "backend",
-      message: `Operator submitted feedback [${feedbackStatus.toUpperCase()}] for decision ${id}`
-    };
-    return { 
-      decisions: updatedDecisions,
-      logs: [newLog, ...state.logs]
-    };
-  }),
+  submitFeedback: async (id, feedbackStatus) => {
+    try {
+      get().addLog({
+        timestamp: new Date().toLocaleTimeString(),
+        level: "INFO",
+        service: "frontend",
+        message: `Submitting feedback status [${feedbackStatus.toUpperCase()}] for decision ${id}...`
+      });
+
+      const res = await fetch(`${API_URL}/api/v1/optimization/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ decision_id: id, rating: feedbackStatus })
+      });
+      const payload = await res.json();
+
+      if (payload.success) {
+        set((state) => {
+          const updatedDecisions = state.decisions.map((dec) => 
+            dec.id === id ? { ...dec, feedbackStatus } : dec
+          );
+          return { decisions: updatedDecisions };
+        });
+        get().addLog({
+          timestamp: new Date().toLocaleTimeString(),
+          level: "INFO",
+          service: "backend",
+          message: `Feedback for decision ${id} successfully logged.`
+        });
+      }
+    } catch (e: any) {
+      console.error("Failed submitting feedback:", e);
+      // Local fallback representation
+      set((state) => {
+        const updatedDecisions = state.decisions.map((dec) => 
+          dec.id === id ? { ...dec, feedbackStatus } : dec
+        );
+        return { decisions: updatedDecisions };
+      });
+    }
+  },
 
   addLog: (log) => set((state) => ({
     logs: [{ ...log, id: `log-${Date.now()}` }, ...state.logs]
@@ -118,34 +150,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
         occupancy: point.occupancyCount,
         savings: state.summary.savings
       }
-    };
-  }),
-
-  triggerMockOptimization: () => set((state) => {
-    const nextHvac = 22.0 + Math.random() * 2;
-    const nextLight = Math.random() > 0.5 ? 70 : 80;
-    const newDecision: AgentDecision = {
-      id: `dec-${Date.now()}`,
-      timestamp: new Date().toISOString(),
-      hvacSetpoint: parseFloat(nextHvac.toFixed(1)),
-      lightingDim: nextLight,
-      reason: `Optimization triggered manually by operator. Stabilizing indoor thermal index (PMV: ${state.metrics[state.metrics.length - 1]?.pmv.toFixed(2) || "0.0"}) at minimum power output profile.`,
-      modelName: state.settings.modelName,
-      tokensConsumed: Math.floor(350 + Math.random() * 200),
-      feedbackStatus: "unrated"
-    };
-
-    const newLog: SystemLog = {
-      id: `log-${Date.now()}`,
-      timestamp: new Date().toLocaleTimeString(),
-      level: "INFO",
-      service: "agent",
-      message: `Manual optimization complete: Target HVAC setpoint -> ${newDecision.hvacSetpoint}°C, Lights -> ${newDecision.lightingDim}%`
-    };
-
-    return {
-      decisions: [newDecision, ...state.decisions],
-      logs: [newLog, ...state.logs]
     };
   }),
 
@@ -170,7 +174,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log("Received WebSocket event:", data);
 
         if (data.event === "SIMULATION_STEP") {
           const payload = data.payload;
@@ -212,8 +215,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
             timestamp: new Date().toLocaleTimeString(),
             level: "INFO",
             service: "simulator",
-            message: "Simulation finished successfully."
+            message: "Simulation finished successfully. Querying parsed SQL metrics..."
           });
+          // Fetch final database metrics
+          const runId = get().simState.runId;
+          if (runId) {
+            get().fetchHistoricalMetrics(runId);
+            get().triggerLiveOptimization(runId);
+          }
         }
       } catch (err) {
         console.error("Error parsing WS packet:", err);
@@ -235,14 +244,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const res = await fetch(`${API_URL}/api/v1/simulation/latest`);
       const payload = await res.json();
       if (payload.success && payload.data) {
+        const runId = payload.data.id;
         set((state) => ({
           simState: {
             ...state.simState,
-            runId: payload.data.id,
+            runId: runId,
             status: payload.data.status,
             currentModel: payload.data.simulation_name
           }
         }));
+        // Retrieve loaded metrics history and optimizations
+        if (runId) {
+          get().fetchHistoricalMetrics(runId);
+          get().fetchAIDecisions(runId);
+        }
       }
     } catch (e) {
       console.warn("Failed fetching latest simulation configuration:", e);
@@ -272,7 +287,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
             ...state.simState,
             runId: payload.data.id,
             status: payload.data.status,
-            currentModel: payload.data.simulation_name
+            currentModel: payload.data.simulation_name,
+            elapsedSeconds: 0
           }
         }));
       } else {
@@ -324,6 +340,155 @@ export const useAppStore = create<AppStore>((set, get) => ({
         service: "frontend",
         message: `Overrides submission failed: ${e.message}`
       });
+    }
+  },
+
+  // Fetch metrics history
+  fetchHistoricalMetrics: async (simId: UUID) => {
+    try {
+      const res = await fetch(`${API_URL}/api/v1/simulation/results/${simId}`);
+      const payload = await res.json();
+      if (payload.success && Array.isArray(payload.data)) {
+        const mappedMetrics: SimulationMetric[] = payload.data.map((m: any) => {
+          const recDate = new Date(m.recorded_at);
+          const hh = String(recDate.getHours()).padStart(2, "0");
+          const mm = String(recDate.getMinutes()).padStart(2, "0");
+          return {
+            timestamp: `${hh}:${mm}`,
+            indoorTemp: m.temperature,
+            outdoorTemp: 26.5, // Outdoor temperature stub fallback
+            relativeHumidity: m.humidity,
+            occupancyCount: m.occupancy,
+            pmv: 0.0,
+            ppd: 0.0,
+            hvacPower: m.hvac_load,
+            lightingPower: m.lighting_load
+          };
+        });
+        
+        if (mappedMetrics.length > 0) {
+          const latestPoint = mappedMetrics[mappedMetrics.length - 1];
+          set({ 
+            metrics: mappedMetrics,
+            summary: {
+              energy: Math.round(latestPoint.hvacPower + latestPoint.lightingPower),
+              temperature: latestPoint.indoorTemp,
+              occupancy: latestPoint.occupancyCount,
+              savings: get().summary.savings
+            }
+          });
+        }
+      }
+    } catch (e) {
+      console.warn("Failed fetching historical metrics:", e);
+    }
+  },
+
+  // Trigger deterministic optimization pass
+  triggerLiveOptimization: async (simId?: string) => {
+    try {
+      const activeId = simId || get().simState.runId;
+      if (!activeId) return;
+
+      const res = await fetch(`${API_URL}/api/v1/optimize`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ simulation_id: activeId })
+      });
+      const payload = await res.json();
+      if (payload.success && payload.data) {
+        set((state) => ({
+          summary: {
+            ...state.summary,
+            savings: payload.data.estimated_savings_percent
+          }
+        }));
+        get().addLog({
+          timestamp: new Date().toLocaleTimeString(),
+          level: "INFO",
+          service: "optimizer",
+          message: `Deterministic optimization pass complete. Saving percent target: ${payload.data.estimated_savings_percent}%`
+        });
+        await get().fetchAIDecisions(activeId);
+      }
+    } catch (e) {
+      console.warn("Failed to trigger optimization rules engine:", e);
+    }
+  },
+
+  // Trigger LangGraph AI Optimization Agent report
+  triggerAILangGraphAnalysis: async (simId: string) => {
+    try {
+      set({ aiReportLoading: true });
+      get().addLog({
+        timestamp: new Date().toLocaleTimeString(),
+        level: "INFO",
+        service: "agent",
+        message: "Triggering LangGraph Agent reasoning node flow..."
+      });
+
+      const res = await fetch(`${API_URL}/api/v1/ai/analyze/${simId}`, {
+        method: "POST"
+      });
+      const payload = await res.json();
+      if (payload.success && payload.data) {
+        set({ 
+          aiReport: payload.data.final_report,
+          aiReportLoading: false 
+        });
+        get().addLog({
+          timestamp: new Date().toLocaleTimeString(),
+          level: "INFO",
+          service: "agent",
+          message: "LangGraph report generated successfully."
+        });
+        await get().fetchAIDecisions(simId);
+      } else {
+        throw new Error(payload.detail || "Agent workflow crash");
+      }
+    } catch (e: any) {
+      console.error(e);
+      set({ aiReportLoading: false });
+      get().addLog({
+        timestamp: new Date().toLocaleTimeString(),
+        level: "ERROR",
+        service: "agent",
+        message: `LangGraph agent execution failed: ${e.message}`
+      });
+    }
+  },
+
+  // Fetch logged decisions and AI reports
+  fetchAIDecisions: async (simId: string) => {
+    try {
+      // 1. Fetch deterministic recommendations
+      const recRes = await fetch(`${API_URL}/api/v1/recommendations/${simId}`);
+      const recPayload = await recRes.json();
+      
+      // 2. Fetch LangGraph natural language report
+      const repRes = await fetch(`${API_URL}/api/v1/ai/report/${simId}`);
+      const repPayload = await repRes.json();
+
+      let mappedDecisions: AgentDecision[] = [];
+      if (recPayload.success && Array.isArray(recPayload.data?.recommendations)) {
+        mappedDecisions = recPayload.data.recommendations.map((r: any, idx: number) => ({
+          id: `dec-${idx}-${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          hvacSetpoint: r.category === "HVAC" ? 24.0 : 22.0,
+          lightingDim: r.category === "Lighting" ? 70 : 100,
+          reason: r.recommendation,
+          modelName: "Rule Engine",
+          tokensConsumed: 0,
+          feedbackStatus: "unrated"
+        }));
+      }
+
+      set((state) => ({
+        decisions: mappedDecisions.length > 0 ? mappedDecisions : state.decisions,
+        aiReport: repPayload.success ? repPayload.data.final_report : state.aiReport
+      }));
+    } catch (e) {
+      console.warn("Failed retrieving AI reports and decisions:", e);
     }
   }
 }));

@@ -8,10 +8,16 @@ import OccupancyChart from "@/components/dashboard/OccupancyChart";
 import SystemStatus from "@/components/dashboard/SystemStatus";
 import RecentActions from "@/components/dashboard/RecentActions";
 import AIReasoningCard from "@/components/dashboard/AIReasoningCard";
+import { useEffect } from "react";
 import { Zap, Thermometer, Users, TrendingUp } from "lucide-react";
 
 export default function Dashboard() {
-  const { summary } = useAppStore();
+  const { summary, connectWebSocket, fetchLatestSimulation } = useAppStore();
+
+  useEffect(() => {
+    connectWebSocket();
+    fetchLatestSimulation();
+  }, []);
 
   return (
     <div className="space-y-8 animate-fade-in">

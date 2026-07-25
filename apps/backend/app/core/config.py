@@ -8,10 +8,10 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "change-me"
     
     # Database Settings
-    POSTGRES_DB: str = "ecoloop"
-    POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "postgres"
-    DATABASE_URL: str = "postgresql://postgres:postgres@postgres:5432/ecoloop"
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/ecoloop"
+    
+    # Redis Settings
+    REDIS_URL: str = "redis://localhost:6379"
     
     # AI / Ollama Settings
     OLLAMA_HOST: str = "http://ollama:11434"
@@ -29,9 +29,9 @@ class Settings(BaseSettings):
     LOG_ROTATION: str = "10 MB"
     LOG_RETENTION: str = "7 days"
 
-    # Settings configurations (enables loading from .env.development or .env files)
+    # Priority order load: .env.local -> .env.development -> .env.example
     model_config = SettingsConfigDict(
-        env_file=".env.development", 
+        env_file=(".env.local", ".env.development", ".env.example"),
         env_file_encoding="utf-8", 
         extra="ignore"
     )

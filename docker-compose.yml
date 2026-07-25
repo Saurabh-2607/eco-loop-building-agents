@@ -1,6 +1,23 @@
 version: "3.9"
 
 services:
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: ecoloop-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - ecoloop-network
+
   frontend:
     build:
       context: ./apps/web
@@ -26,30 +43,15 @@ services:
       - "8000:8000"
     volumes:
       - ./apps/backend:/app
+      - ./logs:/app/logs
+      - energyplus-output:/app/output
     env_file:
       - .env.development
     depends_on:
-      - postgres
       - redis
+      - ollama
     networks:
       - ecoloop-network
-
-  postgres:
-    image: postgres:16-alpine
-    container_name: ecoloop-postgres
-    ports:
-      - "5432:5432"
-    env_file:
-      - .env.development
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    networks:
-      - ecoloop-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ecoloop"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   redis:
     image: redis:7-alpine
@@ -66,12 +68,24 @@ services:
       timeout: 5s
       retries: 5
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ecoloop-ollama
+    volumes:
+      - ollama-models:/root/.ollama
+    networks:
+      - ecoloop-network
+
 networks:
   ecoloop-network:
     driver: bridge
 
 volumes:
-  postgres-data:
-    driver: local
+  caddy_data:
+  caddy_config:
   redis-data:
+    driver: local
+  ollama-models:
+    driver: local
+  energyplus-output:
     driver: local

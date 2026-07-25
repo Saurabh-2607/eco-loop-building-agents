@@ -40,126 +40,168 @@ class EnergyPlusParser:
             return parsed_records
             
         try:
-            conn = sqlite3.connect(self.sql_path)
-            cursor = conn.cursor()
-            
-            # Fetch TimeIndex mappings
-            cursor.execute("SELECT TimeIndex, Month, Day, Hour, Minute FROM Time ORDER BY TimeIndex ASC")
-            time_rows = cursor.fetchall()
-            time_map = {row[0]: (row[1], row[2], row[3], row[4]) for row in time_rows}
-            
-            # Fetch ReportDataDictionary indexes with KeyValue, Name and Units
-            cursor.execute("SELECT ReportDataDictionaryIndex, KeyValue, Name, Units FROM ReportDataDictionary")
-            dict_rows = cursor.fetchall()
-            
-            # Match variables indexes
-            temp_indices = []
-            humidity_indices = []
-            occupancy_indices = []
-            
-            power_mappings = []       # List of tuples (idx, units)
-            hvac_cooling_mappings = [] # List of tuples (idx, units)
-            hvac_heating_mappings = [] # List of tuples (idx, units)
-            lights_mappings = []       # List of tuples (idx, units)
-            
-            for idx, key_value, name, units in dict_rows:
-                name_lower = name.lower()
-                key_lower = key_value.lower() if key_value else ""
+            with sqlite3.connect(self.sql_path) as conn:
+                cursor = conn.cursor()
                 
-                # Filter out obvious outdoor or non-zone variables for temperature averaging
-                is_indoor_temp = ("zone mean air temperature" in name_lower or "zone air temperature" in name_lower)
-                is_outdoor_key = any(x in key_lower for x in ["outdoor", "environment", "ambient", "weather"])
-                
-                if is_indoor_temp and not is_outdoor_key:
-                    temp_indices.append(idx)
-                elif "zone air relative humidity" in name_lower or "site outdoor air relative humidity" in name_lower:
-                    humidity_indices.append(idx)
-                elif "zone people occupant count" in name_lower or "occupant count" in name_lower:
-                    occupancy_indices.append(idx)
-                elif "electricity:facility" in name_lower or "facility total electric power" in name_lower:
-                    power_mappings.append((idx, units))
-                elif "air system total cooling energy" in name_lower or "sensible cooling energy" in name_lower:
-                    hvac_cooling_mappings.append((idx, units))
-                elif "air system total heating energy" in name_lower or "sensible heating energy" in name_lower:
-                    hvac_heating_mappings.append((idx, units))
-                elif "interiorlights:electricity" in name_lower or "lights electric power" in name_lower:
-                    lights_mappings.append((idx, units))
-                    
-            # Retrieve all ReportData rows grouped by TimeIndex
-            cursor.execute("SELECT TimeIndex, ReportDataDictionaryIndex, Value FROM ReportData ORDER BY TimeIndex ASC")
-            data_rows = cursor.fetchall()
-            
-            # Group values by TimeIndex and dictionary index as lists to support multiple zones
-            grouped_data = defaultdict(lambda: defaultdict(list))
-            for time_idx, dict_idx, val in data_rows:
-                grouped_data[time_idx][dict_idx].append(val)
-                
-            current_year = datetime.utcnow().year
-            
-            for time_idx in sorted(time_map.keys()):
-                month, day, hour, minute = time_map[time_idx]
-                vals = grouped_data.get(time_idx, {})
-                
-                # Zone temperature: Average of conditioned zone temperatures, filtering outliers (e.g. < 10°C or > 40°C)
-                raw_temps = []
-                for idx in temp_indices:
-                    raw_temps.extend(vals.get(idx, []))
-                temps = [t for t in raw_temps if 10.0 <= t <= 40.0]
-                temperature = sum(temps) / len(temps) if temps else 22.0
-                
-                # Zone relative humidity: Average of matching humidity points
-                raw_hums = []
-                for idx in humidity_indices:
-                    raw_hums.extend(vals.get(idx, []))
-                hums = [h for h in raw_hums if 0.0 <= h <= 100.0]
-                humidity = sum(hums) / len(hums) if hums else 50.0
-                
-                # Zone occupant count: Sum of all matching zones occupancy counts
-                raw_occs = []
-                for idx in occupancy_indices:
-                    raw_occs.extend(vals.get(idx, []))
-                occupancy = sum(raw_occs) if raw_occs else 0.0
-                
-                # Total Electric Power: Sum and convert units dynamically
-                power_sum = 0.0
-                for idx, units in power_mappings:
-                    power_sum += sum(self._convert_to_kw(v, units) for v in vals.get(idx, []))
-                energy_usage_kw = power_sum
-                
-                # HVAC cooling and heating energy: Sum and convert units
-                cooling_kw = 0.0
-                for idx, units in hvac_cooling_mappings:
-                    cooling_kw += sum(self._convert_to_kw(v, units) for v in vals.get(idx, []))
-                    
-                heating_kw = 0.0
-                for idx, units in hvac_heating_mappings:
-                    heating_kw += sum(self._convert_to_kw(v, units) for v in vals.get(idx, []))
-                hvac_load_kw = cooling_kw + heating_kw
-                
-                # Lighting Power: Sum and convert units
-                lights_kw = 0.0
-                for idx, units in lights_mappings:
-                    lights_kw += sum(self._convert_to_kw(v, units) for v in vals.get(idx, []))
-                lighting_load_kw = lights_kw
-                
-                # Construct real datetime timestamp by applying timedelta to base date to handle Hour=24 cleanly
+                # 1. Determine if EnvironmentPeriods table has Type 3 (Weather Run)
+                has_weather_run = False
                 try:
-                    recorded_at = datetime(current_year, month, day) + timedelta(hours=hour, minutes=minute)
-                except ValueError:
-                    recorded_at = datetime.utcnow()
+                    cursor.execute("SELECT COUNT(*) FROM EnvironmentPeriods WHERE EnvironmentType = 3")
+                    has_weather_run = cursor.fetchone()[0] > 0
+                except sqlite3.Error:
+                    # Catch any SQLite related schema/operational errors defensively
+                    pass
+
+                # Fetch TimeIndex mappings filtering out Design Days/Warmup intervals
+                if has_weather_run:
+                    cursor.execute("""
+                        SELECT Time.TimeIndex, Time.Month, Time.Day, Time.Hour, Time.Minute 
+                        FROM Time 
+                        JOIN EnvironmentPeriods ON Time.EnvironmentPeriodIndex = EnvironmentPeriods.EnvironmentPeriodIndex
+                        WHERE EnvironmentPeriods.EnvironmentType = 3
+                        ORDER BY Time.TimeIndex ASC
+                    """)
+                else:
+                    cursor.execute("SELECT TimeIndex, Month, Day, Hour, Minute FROM Time ORDER BY TimeIndex ASC")
                 
-                record = {
-                    "temperature": round(temperature, 2),
-                    "humidity": round(humidity, 2),
-                    "occupancy": round(occupancy, 2),
-                    "energy_usage": round(energy_usage_kw, 2),
-                    "hvac_load": round(hvac_load_kw, 2),
-                    "lighting_load": round(lighting_load_kw, 2),
-                    "recorded_at": recorded_at
-                }
-                parsed_records.append(record)
+                time_rows = cursor.fetchall()
+                time_map = {row[0]: (row[1], row[2], row[3], row[4]) for row in time_rows}
                 
-            conn.close()
+                if not time_map:
+                    logger.warning("No time steps matched the environment filters.")
+                    return parsed_records
+
+                # 2. Fetch ReportDataDictionary metadata
+                cursor.execute("SELECT ReportDataDictionaryIndex, KeyValue, Name, Units FROM ReportDataDictionary")
+                dict_rows = cursor.fetchall()
+                
+                # Catalog variable indexing information
+                variable_catalog = {}
+                
+                for idx, key_value, name, units in dict_rows:
+                    name_lower = name.lower()
+                    key_lower = key_value.lower() if key_value else ""
+                    
+                    # Tag key categories
+                    is_temp = ("zone mean air temperature" in name_lower or "zone air temperature" in name_lower)
+                    is_indoor_humidity = "zone air relative humidity" in name_lower
+                    is_outdoor_humidity = "site outdoor air relative humidity" in name_lower
+                    is_occupancy = ("zone people occupant count" in name_lower or "occupant count" in name_lower)
+                    is_power = ("electricity:facility" in name_lower or "facility total electric power" in name_lower)
+                    is_cooling = ("air system total cooling energy" in name_lower or "sensible cooling energy" in name_lower)
+                    is_heating = ("air system total heating energy" in name_lower or "sensible heating energy" in name_lower)
+                    is_lights = ("interiorlights:electricity" in name_lower or "lights electric power" in name_lower)
+                    
+                    variable_catalog[idx] = {
+                        "name": name,
+                        "key": key_value,
+                        "units": units,
+                        "is_temp": is_temp and not any(x in key_lower for x in ["outdoor", "environment", "ambient"]),
+                        "is_indoor_humidity": is_indoor_humidity,
+                        "is_outdoor_humidity": is_outdoor_humidity,
+                        "is_occupancy": is_occupancy,
+                        "is_power": is_power,
+                        "is_cooling": is_cooling,
+                        "is_heating": is_heating,
+                        "is_lights": is_lights
+                    }
+                    
+                # Summary logging to facilitate debugging of dynamic IDFs
+                logger.info(
+                    f"Cataloged variables: "
+                    f"{sum(v['is_temp'] for v in variable_catalog.values())} temperature variables, "
+                    f"{sum(v['is_power'] for v in variable_catalog.values())} power variables, "
+                    f"{sum(v['is_cooling'] for v in variable_catalog.values())} cooling variables, "
+                    f"{sum(v['is_heating'] for v in variable_catalog.values())} heating variables."
+                )
+
+                # 3. Retrieve all ReportData rows sorted to scale for large annual datasets
+                cursor.execute("SELECT TimeIndex, ReportDataDictionaryIndex, Value FROM ReportData ORDER BY TimeIndex ASC")
+                
+                # Group values by TimeIndex and dictionary index, ignoring out-of-period rows
+                grouped_data = defaultdict(lambda: defaultdict(list))
+                
+                # Fetch row-by-row to optimize memory allocation on huge results sets
+                while True:
+                    rows = cursor.fetchmany(2000)
+                    if not rows:
+                        break
+                    for time_idx, dict_idx, val in rows:
+                        if time_idx not in time_map:
+                            continue
+                        grouped_data[time_idx][dict_idx].append(val)
+                    
+                current_year = datetime.utcnow().year
+                
+                for time_idx in sorted(time_map.keys()):
+                    month, day, hour, minute = time_map[time_idx]
+                    vals = grouped_data.get(time_idx, {})
+                    
+                    temp_vals = []
+                    indoor_hum_vals = []
+                    outdoor_hum_vals = []
+                    occ_vals = []
+                    
+                    total_power_kw = 0.0
+                    cooling_kw = 0.0
+                    heating_kw = 0.0
+                    lights_kw = 0.0
+                    
+                    for dict_idx, readings in vals.items():
+                        info = variable_catalog.get(dict_idx)
+                        if not info:
+                            continue
+                            
+                        if info["is_temp"]:
+                            temp_vals.extend(readings)
+                        elif info["is_indoor_humidity"]:
+                            indoor_hum_vals.extend(readings)
+                        elif info["is_outdoor_humidity"]:
+                            outdoor_hum_vals.extend(readings)
+                        elif info["is_occupancy"]:
+                            occ_vals.extend(readings)
+                        elif info["is_power"]:
+                            total_power_kw += sum(self._convert_to_kw(r, info["units"]) for r in readings)
+                        elif info["is_cooling"]:
+                            cooling_kw += sum(self._convert_to_kw(r, info["units"]) for r in readings)
+                        elif info["is_heating"]:
+                            heating_kw += sum(self._convert_to_kw(r, info["units"]) for r in readings)
+                        elif info["is_lights"]:
+                            lights_kw += sum(self._convert_to_kw(r, info["units"]) for r in readings)
+                            
+                    # Calculate averages & sums safely
+                    temperature = sum(temp_vals) / len(temp_vals) if temp_vals else 22.0
+                    
+                    # Prioritize indoor humidity over site outdoor humidity
+                    if indoor_hum_vals:
+                        humidity = sum(indoor_hum_vals) / len(indoor_hum_vals)
+                    elif outdoor_hum_vals:
+                        humidity = sum(outdoor_hum_vals) / len(outdoor_hum_vals)
+                    else:
+                        humidity = 50.0
+                        
+                    occupancy = sum(occ_vals) if occ_vals else 0.0
+                    hvac_load_kw = cooling_kw + heating_kw
+                    
+                    # Normalize intervals bounds safely using datetime math
+                    try:
+                        base_day = datetime(current_year, month, day)
+                        # Handle minute=60 or hour=24 gracefully via timedelta offset
+                        recorded_at = base_day + timedelta(hours=hour, minutes=minute)
+                    except ValueError:
+                        recorded_at = datetime.utcnow()
+                    
+                    record = {
+                        "temperature": round(temperature, 2),
+                        "humidity": round(humidity, 2),
+                        "occupancy": round(occupancy, 2),
+                        "energy_usage": round(total_power_kw, 2),
+                        "hvac_load": round(hvac_load_kw, 2),
+                        "lighting_load": round(lights_kw, 2),
+                        "recorded_at": recorded_at
+                    }
+                    parsed_records.append(record)
+                    
             logger.info(f"Successfully parsed {len(parsed_records)} rows from SQLite database.")
         except Exception as e:
             logger.error(f"Error parsing SQLite database: {e}")

@@ -16,11 +16,18 @@ elif db_url.startswith("postgresql://"):
 # Remove sslmode from URL since asyncpg doesn't understand it
 db_url = db_url.replace("?sslmode=require", "")
 
+engine_args = {
+    "future": True
+}
+if "sqlite" not in db_url:
+    engine_args.update({
+        "connect_args": {"ssl": "require"},
+        "pool_pre_ping": True,
+        "pool_size": 10,
+        "max_overflow": 20
+    })
+
 engine = create_async_engine(
     db_url,
-    connect_args={"ssl": "require"},
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
-    future=True,
+    **engine_args
 )

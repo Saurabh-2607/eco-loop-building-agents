@@ -303,7 +303,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         timestamp: new Date().toLocaleTimeString(),
         level: "ERROR",
         service: "frontend",
-        message: `Failed to trigger simulation: ${e.message}`
+        message: `Failed to trigger simulation: ${err.message}`
       });
     }
   },
@@ -342,7 +342,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         timestamp: new Date().toLocaleTimeString(),
         level: "ERROR",
         service: "frontend",
-        message: `Overrides submission failed: ${e.message}`
+        message: `Overrides submission failed: ${err.message}`
       });
     }
   },
@@ -484,7 +484,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         timestamp: new Date().toLocaleTimeString(),
         level: "ERROR",
         service: "agent",
-        message: `LangGraph agent execution failed: ${e.message}`
+        message: `LangGraph agent execution failed: ${err.message}`
       });
     }
   },

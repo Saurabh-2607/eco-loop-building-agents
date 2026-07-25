@@ -1,26 +1,30 @@
 # Node dependency directories
-node_modules
-.next
+node_modules/
+.next/
 
 # Environment variables files
-.env
-.env.*
+.env*
 !.env.example
 
 # Python compilation files & cache
 *.pyc
-__pycache__
-venv
-.venv
+__pycache__/
+venv/
+.venv/
 
-# Output & distribution targets
-dist
-coverage
+# Output, logs & distribution targets
+dist/
+coverage/
 *.log
-simulation/output
-simulation/logs
+logs/
+simulation/output/
+simulation/logs/
+
+# Local database volumes data
+postgres-data/
+redis-data/
 
 # IDE configurations
-.idea
-.vscode
+.idea/
+.vscode/
 .DS_Store

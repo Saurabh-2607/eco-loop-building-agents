@@ -1,15 +1,11 @@
 import { create } from "zustand";
 import { SimulationMetric, AgentDecision, SystemLog, SimulationState, SystemSettings } from "@/types";
 import { 
-  mockSimulationState, 
   mockSystemSettings, 
-  mockHistoricalMetrics, 
-  mockAgentDecisions, 
-  mockSystemLogs,
   mockDashboardSummary
 } from "@/lib/mock-data";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/ws";
 
 interface AppStore {
@@ -47,16 +43,28 @@ interface AppStore {
 let socket: WebSocket | null = null;
 
 export const useAppStore = create<AppStore>((set, get) => ({
-  simState: mockSimulationState,
+  simState: {
+    runId: "",
+    status: "idle",
+    speedMultiplier: 1,
+    elapsedSeconds: 0,
+    currentModel: "",
+    currentWeather: ""
+  },
   settings: {
     ...mockSystemSettings,
     apiUrl: API_URL,
     wsUrl: WS_URL,
   },
-  metrics: mockHistoricalMetrics,
-  decisions: mockAgentDecisions,
-  logs: mockSystemLogs,
-  summary: mockDashboardSummary,
+  metrics: [],
+  decisions: [],
+  logs: [],
+  summary: {
+    energy: 0,
+    temperature: 0,
+    occupancy: 0,
+    savings: 0
+  },
   wsConnected: false,
   aiReport: "",
   aiReportLoading: false,
@@ -243,23 +251,56 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // Query latest run status
   fetchLatestSimulation: async () => {
     try {
-      const res = await fetch(`${API_URL}/api/v1/simulation/latest`);
-      const payload = await res.json();
-      if (payload.success && payload.data) {
-        const runId = payload.data.id;
-        set((state) => ({
-          simState: {
-            ...state.simState,
-            runId: runId,
-            status: payload.data.status,
-            currentModel: payload.data.simulation_name
-          }
-        }));
-        // Retrieve loaded metrics history and optimizations
-        if (runId) {
-          get().fetchHistoricalMetrics(runId);
-          get().fetchAIDecisions(runId);
-        }
+      const latestRes = await fetch(`${API_URL}/api/v1/simulation/latest`);
+      const latest = await latestRes.json();
+
+      if (!latest.success || !latest.data) return;
+
+      const simId = latest.data.id;
+
+      const resultsRes = await fetch(`${API_URL}/api/v1/simulation/results/${simId}`);
+      const results = await resultsRes.json();
+
+      const mappedMetrics: SimulationMetric[] = (results.success && Array.isArray(results.data))
+        ? results.data.map((item: {
+            recorded_at: string;
+            temperature: number;
+            humidity: number;
+            occupancy: number;
+            hvac_load: number;
+            lighting_load: number;
+          }) => {
+            const recDate = new Date(item.recorded_at);
+            const hh = String(recDate.getHours()).padStart(2, "0");
+            const mm = String(recDate.getMinutes()).padStart(2, "0");
+            return {
+              timestamp: `${hh}:${mm}`,
+              indoorTemp: item.temperature,
+              outdoorTemp: 26.5,
+              relativeHumidity: item.humidity,
+              occupancyCount: item.occupancy,
+              pmv: 0,
+              ppd: 0,
+              hvacPower: item.hvac_load,
+              lightingPower: item.lighting_load
+            };
+          })
+        : [];
+
+      set({
+        simState: {
+          runId: simId,
+          status: latest.data.status,
+          speedMultiplier: 1,
+          elapsedSeconds: 0,
+          currentModel: latest.data.simulation_name,
+          currentWeather: ""
+        },
+        metrics: mappedMetrics
+      });
+
+      if (simId) {
+        get().fetchAIDecisions(simId);
       }
     } catch (e) {
       console.warn("Failed fetching latest simulation configuration:", e);

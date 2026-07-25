@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: ecoloop-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - ecoloop-net
+
+  frontend:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: ecoloop-frontend
+    restart: unless-stopped
+    environment:
+      - NEXT_PUBLIC_API_URL=https://ecoloop.example.com
+    networks:
+      - ecoloop-net
+
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    container_name: ecoloop-backend
+    restart: unless-stopped
+    volumes:
+      - ./simulation/weather:/app/weather
+      - ./simulation/idf:/app/models
+      - ./simulation/output:/app/output
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:${DB_PASSWORD}@db:5432/ecoloop
+      - OLLAMA_HOST=http://ollama:11434
+      - ENERGYPLUS_PATH=/usr/local/EnergyPlus-9-6-0
+    depends_on:
+      - db
+      - ollama
+    networks:
+      - ecoloop-net
+
+  db:
+    image: postgres:16-alpine
+    container_name: ecoloop-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=ecoloop
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ecoloop-net
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ecoloop-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - ecoloop-net
+
+networks:
+  ecoloop-net:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
+  postgres_data:
+  ollama_data:

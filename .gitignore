@@ -1,0 +1,26 @@
+# Node dependency directories
+node_modules
+.next
+
+# Environment variables files
+.env
+.env.*
+!.env.example
+
+# Python compilation files & cache
+*.pyc
+__pycache__
+venv
+.venv
+
+# Output & distribution targets
+dist
+coverage
+*.log
+simulation/output
+simulation/logs
+
+# IDE configurations
+.idea
+.vscode
+.DS_Store

@@ -30,9 +30,13 @@ target_metadata = metadata
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
     url = settings.DATABASE_URL
-    if url.startswith("postgresql://"):
+    if not url:
+        url = "postgresql+asyncpg://postgres:postgres@localhost:5432/ecoloop"
+    elif url.startswith("postgresql://"):
         url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
         
+    url = url.replace("?sslmode=require", "")
+
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -53,9 +57,13 @@ def do_run_migrations(connection):
 
 async def run_async_migrations():
     url = settings.DATABASE_URL
-    if url.startswith("postgresql://"):
+    if not url:
+        url = "postgresql+asyncpg://postgres:postgres@localhost:5432/ecoloop"
+    elif url.startswith("postgresql://"):
         url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
         
+    url = url.replace("?sslmode=require", "")
+
     ini_section = config.get_section(config.config_ini_section, {})
     ini_section["sqlalchemy.url"] = url
     
@@ -63,6 +71,7 @@ async def run_async_migrations():
         ini_section,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args={"ssl": "require"},
     )
 
     async with connectable.connect() as connection:

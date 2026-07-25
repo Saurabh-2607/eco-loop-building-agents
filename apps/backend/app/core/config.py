@@ -1,5 +1,8 @@
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
+
+BASE_DIR = Path(__file__).resolve().parents[4]
 
 class Settings(BaseSettings):
     # Application Parameters
@@ -38,10 +41,10 @@ class Settings(BaseSettings):
     # Priority order load: .env.local -> .env.development -> .env.example
     model_config = SettingsConfigDict(
         env_file=(
-            ".env.local",
-            ".env.development",
-            ".env.production",
-            ".env.example",
+            BASE_DIR / ".env.local",
+            BASE_DIR / ".env.development",
+            BASE_DIR / ".env.production",
+            BASE_DIR / ".env.example",
         ),
         env_file_encoding="utf-8",
         extra="ignore",

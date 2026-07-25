@@ -38,13 +38,13 @@ class Settings(BaseSettings):
     LOG_ROTATION: str = "10 MB"
     LOG_RETENTION: str = "7 days"
 
-    # Priority order load: .env.local -> .env.development -> .env.example
+    # Priority order load: .env.example -> .env.development -> .env.local -> .env.production
     model_config = SettingsConfigDict(
         env_file=(
-            BASE_DIR / ".env.local",
-            BASE_DIR / ".env.development",
-            BASE_DIR / ".env.production",
             BASE_DIR / ".env.example",
+            BASE_DIR / ".env.development",
+            BASE_DIR / ".env.local",
+            BASE_DIR / ".env.production",
         ),
         env_file_encoding="utf-8",
         extra="ignore",

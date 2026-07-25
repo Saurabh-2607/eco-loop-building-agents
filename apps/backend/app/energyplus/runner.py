@@ -73,11 +73,18 @@ class EnergyPlusRunner:
         conn = sqlite3.connect(file_path)
         cursor = conn.cursor()
         
-        # Create schema tables mimicking EnergyPlus SQLite outputs
+        # Create schema tables mimicking EnergyPlus SQLite outputs with exact 10 columns for ReportDataDictionary
         cursor.execute("""
             CREATE TABLE ReportDataDictionary (
                 ReportDataDictionaryIndex INTEGER PRIMARY KEY,
+                IsMeter INTEGER,
+                Type TEXT,
+                IndexGroup TEXT,
+                TimestepType TEXT,
+                KeyValue TEXT,
                 Name TEXT,
+                ReportingFrequency TEXT,
+                ScheduleName TEXT,
                 Units TEXT
             )
         """)
@@ -100,16 +107,18 @@ class EnergyPlusRunner:
             )
         """)
         
-        # Seed dictionaries values
+        # Seed dictionaries values matching real EnergyPlus SQLite columns
+        # Index format: (Index, IsMeter, Type, IndexGroup, TimestepType, KeyValue, Name, ReportingFrequency, ScheduleName, Units)
         variables = [
-            (1, "Zone Air Temperature", "C"),
-            (2, "Zone Air Relative Humidity", "%"),
-            (3, "Zone People Occupant Count", ""),
-            (4, "Facility Total Electric Power", "W"),
-            (5, "Ideal Loads Air System Sensible Cooling Energy", "J"),
-            (6, "Lights Electric Power", "W")
+            (1, 0, "Average", "Zone", "Zone", "Zone A", "Zone Mean Air Temperature", "Hourly", "", "C"),
+            (2, 0, "Average", "Zone", "Zone", "Site", "Site Outdoor Air Relative Humidity", "Hourly", "", "%"),
+            (3, 0, "Average", "Zone", "Zone", "Zone A", "Zone People Occupant Count", "Hourly", "", ""),
+            (4, 1, "Sum", "Facility", "Zone", "Facility", "Electricity:Facility", "Hourly", "", "J"),
+            (5, 0, "Sum", "HVAC", "Zone", "System", "Air System Total Cooling Energy", "Hourly", "", "J"),
+            (6, 0, "Sum", "HVAC", "Zone", "System", "Air System Total Heating Energy", "Hourly", "", "J"),
+            (7, 0, "Sum", "Lights", "Zone", "Zone A", "InteriorLights:Electricity", "Hourly", "", "J")
         ]
-        cursor.executemany("INSERT INTO ReportDataDictionary VALUES (?, ?, ?)", variables)
+        cursor.executemany("INSERT INTO ReportDataDictionary VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", variables)
         
         # Seed 24 hours logs
         for hour in range(1, 25):
@@ -119,16 +128,20 @@ class EnergyPlusRunner:
             temp = 22.0 + random.uniform(-0.5, 0.8) if is_occupied else 24.5 + random.uniform(-1.0, 1.0)
             humidity = 48.0 + random.uniform(-3.0, 5.0)
             occupants = round(80 + random.uniform(-20, 20)) if is_occupied else 0
-            hvac_load = 90.0 + random.uniform(-10.0, 30.0) if is_occupied else 10.0
+            hvac_cooling = 90.0 + random.uniform(-10.0, 30.0) if is_occupied else 10.0
+            hvac_heating = 20.0 if not is_occupied else 0.0
             lights_load = 40.0 if is_occupied else 5.0
-            total_power = (hvac_load + lights_load) * 1000  # Watts
+            total_power = (hvac_cooling + hvac_heating + lights_load) * 1000  # Watts
             
             cursor.execute("INSERT INTO ReportData VALUES (?, ?, ?)", (hour, 1, temp))
             cursor.execute("INSERT INTO ReportData VALUES (?, ?, ?)", (hour, 2, humidity))
             cursor.execute("INSERT INTO ReportData VALUES (?, ?, ?)", (hour, 3, occupants))
-            cursor.execute("INSERT INTO ReportData VALUES (?, ?, ?)", (hour, 4, total_power))
-            cursor.execute("INSERT INTO ReportData VALUES (?, ?, ?)", (hour, 5, hvac_load * 3600000))
-            cursor.execute("INSERT INTO ReportData VALUES (?, ?, ?)", (hour, 6, lights_load * 1000))
+            
+            # Seed electricity variables as Joules (Watts * 3600 seconds/hour)
+            cursor.execute("INSERT INTO ReportData VALUES (?, ?, ?)", (hour, 4, total_power * 3600))
+            cursor.execute("INSERT INTO ReportData VALUES (?, ?, ?)", (hour, 5, hvac_cooling * 3600000))
+            cursor.execute("INSERT INTO ReportData VALUES (?, ?, ?)", (hour, 6, hvac_heating * 3600000))
+            cursor.execute("INSERT INTO ReportData VALUES (?, ?, ?)", (hour, 7, lights_load * 3600000))
             
         conn.commit()
         conn.close()

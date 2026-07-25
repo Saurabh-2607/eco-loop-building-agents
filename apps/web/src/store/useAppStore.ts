@@ -348,7 +348,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   // Fetch metrics history
-  fetchHistoricalMetrics: async (simId: UUID) => {
+  fetchHistoricalMetrics: async (simId: string) => {
     try {
       const res = await fetch(`${API_URL}/api/v1/simulation/results/${simId}`);
       const payload = await res.json();

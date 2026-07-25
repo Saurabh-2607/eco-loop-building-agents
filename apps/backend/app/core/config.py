@@ -18,7 +18,13 @@ class Settings(BaseSettings):
     MODEL_NAME: str = "qwen3:8b"
     
     # EnergyPlus Simulation Settings
-    ENERGYPLUS_ROOT: str = "/simulation"
+    ENERGYPLUS_ROOT: str = "/usr/local/EnergyPlus-26-1-0"
+    ENERGYPLUS_BINARY: str = "/usr/local/bin/energyplus"
+
+    ENERGYPLUS_IDF_DIR: str = "/opt/ecoloop/idf"
+    ENERGYPLUS_WEATHER_DIR: str = "/opt/ecoloop/weather"
+    ENERGYPLUS_OUTPUT_DIR: str = "/opt/ecoloop/output"
+    ENERGYPLUS_LOG_DIR: str = "/opt/ecoloop/logs"
     
     # WebSocket Parameters
     WS_HEARTBEAT_INTERVAL_SEC: int = 20
@@ -31,9 +37,14 @@ class Settings(BaseSettings):
 
     # Priority order load: .env.local -> .env.development -> .env.example
     model_config = SettingsConfigDict(
-        env_file=(".env.local", ".env.development", ".env.example"),
-        env_file_encoding="utf-8", 
-        extra="ignore"
+        env_file=(
+            ".env.local",
+            ".env.development",
+            ".env.production",
+            ".env.example",
+        ),
+        env_file_encoding="utf-8",
+        extra="ignore",
     )
 
 # Instantiate settings singleton

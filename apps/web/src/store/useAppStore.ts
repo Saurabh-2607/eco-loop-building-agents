@@ -41,6 +41,7 @@ interface AppStore {
   triggerLiveOptimization: (simId?: string) => Promise<void>;
   triggerAILangGraphAnalysis: (simId: string) => Promise<void>;
   fetchAIDecisions: (simId: string) => Promise<void>;
+  triggerMockOptimization: () => void;
 }
 
 let socket: WebSocket | null = null;
@@ -382,6 +383,25 @@ export const useAppStore = create<AppStore>((set, get) => ({
     } catch (e) {
       console.warn("Failed fetching historical metrics:", e);
     }
+  },
+
+  triggerMockOptimization: () => {
+    set((state) => ({
+      summary: {
+        ...state.summary,
+        savings: Math.min(
+          state.summary.savings + 5,
+          100
+        )
+      }
+    }));
+
+    get().addLog({
+      timestamp: new Date().toLocaleTimeString(),
+      level: "INFO",
+      service: "optimizer",
+      message: "Mock optimization triggered successfully."
+    });
   },
 
   // Trigger deterministic optimization pass

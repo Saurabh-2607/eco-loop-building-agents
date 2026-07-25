@@ -107,12 +107,12 @@ class SimulationService:
             # 2. Spawn simulation subprocess (or mock)
             run_event = create_websocket_event("SIMULATION_PROGRESS", {"progress": 30, "status": "running"})
             await ws_manager.broadcast(run_event)
-            csv_path = await runner.run_simulation()
+            sql_path = await runner.run_simulation()
             
-            # 3. Parse output CSV
+            # 3. Parse output SQL database
             parse_event = create_websocket_event("SIMULATION_PROGRESS", {"progress": 70, "status": "parsing"})
             await ws_manager.broadcast(parse_event)
-            parser = EnergyPlusParser(csv_path)
+            parser = EnergyPlusParser(sql_path)
             metrics = parser.parse_metrics()
             
             # 4. Open fresh session connection to commit records in background thread context

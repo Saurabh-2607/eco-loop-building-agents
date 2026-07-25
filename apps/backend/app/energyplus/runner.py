@@ -2,7 +2,7 @@ import os
 import subprocess
 import shutil
 import asyncio
-import csv
+import sqlite3
 import random
 from datetime import datetime, timedelta
 from loguru import logger
@@ -23,11 +23,11 @@ class EnergyPlusRunner:
     async def run_simulation(self) -> str:
         """
         Runs the simulation. Uses the real EnergyPlus subprocess if binary exists,
-        otherwise falls back to simulated output generation.
-        Returns the path to the output CSV file.
+        otherwise falls back to simulated SQL output generation.
+        Returns the path to the output SQL file.
         """
         os.makedirs(self.output_dir, exist_ok=True)
-        csv_output_path = os.path.join(self.output_dir, "eplusout.csv")
+        sql_output_path = os.path.join(self.output_dir, "eplusout.sql")
 
         if self.check_binary_exists():
             logger.info(f"EnergyPlus binary found. Launching subprocess simulation...")
@@ -51,58 +51,84 @@ class EnergyPlusRunner:
                     raise RuntimeError(f"EnergyPlus execution failed: {stderr.decode()}")
                 
                 logger.info("EnergyPlus simulation run completed successfully.")
-                return csv_output_path
+                return sql_output_path
             except Exception as e:
                 logger.error(f"Failed executing EnergyPlus subprocess: {e}")
                 raise RuntimeError(f"Subprocess run failed: {e}")
         else:
-            logger.warning("EnergyPlus binary not found in path. Falling back to simulated outputs generation.")
+            logger.warning("EnergyPlus binary not found in path. Falling back to simulated SQL outputs generation.")
             # Simulate processing delay
             await asyncio.sleep(2.0)
-            await self._generate_simulated_csv(csv_output_path)
-            logger.info("Simulated outputs generation completed.")
-            return csv_output_path
+            await self._generate_simulated_sql(sql_output_path)
+            logger.info("Simulated outputs SQL generation completed.")
+            return sql_output_path
 
-    async def _generate_simulated_csv(self, file_path: str):
+    async def _generate_simulated_sql(self, file_path: str):
         """
-        Generate mock CSV simulation outputs resembling actual output headers.
+        Generates a mock SQLite database containing tables matching EnergyPlus eplusout.sql schema.
         """
-        headers = [
-            "Date/Time", 
-            "Zone Air Temperature [C]", 
-            "Zone Air Relative Humidity [%]", 
-            "Zone People Occupant Count []", 
-            "Facility Total Electric Power [W]",
-            "Ideal Loads Air System Sensible Cooling Energy [J]",
-            "Lights Electric Power [W]"
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        conn = sqlite3.connect(file_path)
+        cursor = conn.cursor()
+        
+        # Create schema tables mimicking EnergyPlus SQLite outputs
+        cursor.execute("""
+            CREATE TABLE ReportDataDictionary (
+                ReportDataDictionaryIndex INTEGER PRIMARY KEY,
+                Name TEXT,
+                Units TEXT
+            )
+        """)
+        
+        cursor.execute("""
+            CREATE TABLE Time (
+                TimeIndex INTEGER PRIMARY KEY,
+                Month INTEGER,
+                Day INTEGER,
+                Hour INTEGER,
+                Minute INTEGER
+            )
+        """)
+        
+        cursor.execute("""
+            CREATE TABLE ReportData (
+                TimeIndex INTEGER,
+                ReportDataDictionaryIndex INTEGER,
+                Value REAL
+            )
+        """)
+        
+        # Seed dictionaries values
+        variables = [
+            (1, "Zone Air Temperature", "C"),
+            (2, "Zone Air Relative Humidity", "%"),
+            (3, "Zone People Occupant Count", ""),
+            (4, "Facility Total Electric Power", "W"),
+            (5, "Ideal Loads Air System Sensible Cooling Energy", "J"),
+            (6, "Lights Electric Power", "W")
         ]
+        cursor.executemany("INSERT INTO ReportDataDictionary VALUES (?, ?, ?)", variables)
         
-        base_time = datetime.utcnow() - timedelta(hours=24)
-        
-        with open(file_path, mode="w", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(headers)
+        # Seed 24 hours logs
+        for hour in range(1, 25):
+            cursor.execute("INSERT INTO Time (TimeIndex, Month, Day, Hour, Minute) VALUES (?, ?, ?, ?, ?)", (hour, 7, 25, hour, 0))
             
-            for hour_step in range(24):
-                recorded_at = base_time + timedelta(hours=hour_step)
-                # Format: 07/25 01:00:00 (EnergyPlus style datetime)
-                dt_str = recorded_at.strftime("%m/%d %H:%M:%S")
-                
-                is_occupied = 8 <= recorded_at.hour <= 18
-                temp = 22.0 + random.uniform(-0.5, 0.8) if is_occupied else 24.5 + random.uniform(-1.0, 1.0)
-                humidity = 48.0 + random.uniform(-3.0, 5.0)
-                occupants = round(80 + random.uniform(-20, 20)) if is_occupied else 0
-                hvac_load = 90.0 + random.uniform(-10.0, 30.0) if is_occupied else 10.0
-                lights_load = 40.0 if is_occupied else 5.0
-                total_power = (hvac_load + lights_load) * 1000  # Convert kW to Watts
-                
-                row = [
-                    dt_str,
-                    round(temp, 2),
-                    round(humidity, 2),
-                    occupants,
-                    round(total_power, 2),
-                    round(hvac_load * 3600000, 2),  # Joules
-                    round(lights_load * 1000, 2)
-                ]
-                writer.writerow(row)
+            is_occupied = 8 <= hour <= 18
+            temp = 22.0 + random.uniform(-0.5, 0.8) if is_occupied else 24.5 + random.uniform(-1.0, 1.0)
+            humidity = 48.0 + random.uniform(-3.0, 5.0)
+            occupants = round(80 + random.uniform(-20, 20)) if is_occupied else 0
+            hvac_load = 90.0 + random.uniform(-10.0, 30.0) if is_occupied else 10.0
+            lights_load = 40.0 if is_occupied else 5.0
+            total_power = (hvac_load + lights_load) * 1000  # Watts
+            
+            cursor.execute("INSERT INTO ReportData VALUES (?, ?, ?)", (hour, 1, temp))
+            cursor.execute("INSERT INTO ReportData VALUES (?, ?, ?)", (hour, 2, humidity))
+            cursor.execute("INSERT INTO ReportData VALUES (?, ?, ?)", (hour, 3, occupants))
+            cursor.execute("INSERT INTO ReportData VALUES (?, ?, ?)", (hour, 4, total_power))
+            cursor.execute("INSERT INTO ReportData VALUES (?, ?, ?)", (hour, 5, hvac_load * 3600000))
+            cursor.execute("INSERT INTO ReportData VALUES (?, ?, ?)", (hour, 6, lights_load * 1000))
+            
+        conn.commit()
+        conn.close()

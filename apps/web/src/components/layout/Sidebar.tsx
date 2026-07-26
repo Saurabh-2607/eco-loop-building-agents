@@ -22,6 +22,7 @@ import {
   SidebarGroup,
   SidebarGroupContent
 } from "@/components/ui/sidebar";
+import { Card, CardContent } from "@/components/ui/card";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -61,20 +62,20 @@ export default function AppSidebar() {
   })();
 
   return (
-    <Sidebar className="bg-zinc-950 border-r border-zinc-800 text-zinc-300">
+    <Sidebar>
       {/* Brand Header */}
-      <SidebarHeader className="h-16 flex flex-row items-center gap-3 px-6 border-b border-zinc-800 flex-shrink-0">
-        <div className="text-white text-base font-bold flex-shrink-0">
+      <SidebarHeader className="h-16 flex flex-row items-center gap-3 px-6 border-b flex-shrink-0">
+        <div className="text-foreground text-base font-bold flex-shrink-0">
           ▲
         </div>
         <div>
-          <span className="font-bold text-white text-sm tracking-tight block">EcoLoop</span>
-          <span className="text-zinc-500 text-[10px] font-bold font-mono tracking-wider block -mt-1">BUILDING AGENT</span>
+          <span className="font-bold text-foreground text-sm tracking-tight block">EcoLoop</span>
+          <span className="text-muted-foreground text-[10px] font-bold font-mono tracking-wider block -mt-1">BUILDING AGENT</span>
         </div>
       </SidebarHeader>
 
       {/* Navigation Content */}
-      <SidebarContent className="px-4 py-4">
+      <SidebarContent className="px-2 py-4">
         <SidebarGroup className="p-0">
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
@@ -85,19 +86,11 @@ export default function AppSidebar() {
                     <SidebarMenuButton 
                       render={<Link href={item.href} />}
                       isActive={isActive}
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-205 hover:bg-zinc-900/50 hover:text-zinc-200",
-                        isActive ? "bg-zinc-900 text-white border border-zinc-800" : "text-zinc-400"
-                      )}
                     >
-                      <item.icon className={cn(
-                        "h-5 w-5 transition-colors flex-shrink-0",
-                        isActive ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"
-                      )} />
+                      <item.icon className="flex-shrink-0" />
                       <span>{item.name}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-
                 );
               })}
             </SidebarMenu>
@@ -105,18 +98,20 @@ export default function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      {/* Footer Info: Step and Substep Tracker */}
-      <SidebarFooter className="p-4 border-t border-zinc-800">
-        <div className="bg-zinc-900/40 rounded-lg p-3 border border-zinc-850 space-y-2 text-left">
-          <div className="flex items-center gap-2">
-            <span className={cn("h-2 w-2 rounded-full", statusInfo.color)} />
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest font-mono">Active Step</span>
-          </div>
-          <div className="space-y-0.5">
-            <div className="text-xs font-bold text-white tracking-tight">{statusInfo.step}</div>
-            <div className="text-[10px] leading-relaxed text-zinc-505/80 font-medium">{statusInfo.substep}</div>
-          </div>
-        </div>
+      {/* Footer Info: Step and Substep Tracker using standard Card */}
+      <SidebarFooter className="p-4 border-t">
+        <Card className="bg-muted/40 shadow-none border-0">
+          <CardContent className="p-3 space-y-2 text-left">
+            <div className="flex items-center gap-2">
+              <span className={cn("h-2 w-2 rounded-full", statusInfo.color)} />
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest font-mono">Active Step</span>
+            </div>
+            <div className="space-y-0.5">
+              <div className="text-xs font-bold text-foreground tracking-tight">{statusInfo.step}</div>
+              <div className="text-[10px] leading-relaxed text-muted-foreground font-medium">{statusInfo.substep}</div>
+            </div>
+          </CardContent>
+        </Card>
       </SidebarFooter>
     </Sidebar>
   );

@@ -43,7 +43,8 @@ class SimulationWorker:
                 light_dim = overrides["lighting_dim"]
                 
                 # Dynamic environmental drift simulation
-                hour = (8 + step) % 24  # Start simulation relative to timeline hours
+                minutes_elapsed = step * 15
+                hour = (8 + minutes_elapsed // 60) % 24  # Start simulation relative to timeline hours
                 is_working_hours = 8 <= hour <= 18
                 
                 # Outdoor diurnal curve model (peak in afternoon)
@@ -51,7 +52,8 @@ class SimulationWorker:
                 outdoor_temp += random.uniform(-0.5, 0.5)
                 
                 # Dynamic indoor temperature calculation based on heat gain, outdoor temp and HVAC cooling
-                drift_step = (target_hvac - current_indoor_temp) * 0.2 + random.uniform(-0.15, 0.15)
+                # Scale drift_step by 0.25 since step is now 15 minutes instead of 1 hour
+                drift_step = ((target_hvac - current_indoor_temp) * 0.2 + random.uniform(-0.15, 0.15)) * 0.25
                 current_indoor_temp += drift_step
                 current_indoor_temp = max(16.0, min(32.0, current_indoor_temp))
                 
@@ -76,8 +78,8 @@ class SimulationWorker:
                     "run_id": str(sim_id),
                     "data": {
                         "step": step,
-                        "timestamp": (current_date + timedelta(hours=step)).strftime("%H:%M"),
-                        "recorded_at": (current_date + timedelta(hours=step)).isoformat(),
+                        "timestamp": (current_date + timedelta(minutes=step * 15)).strftime("%b %d, %H:%M"),
+                        "recorded_at": (current_date + timedelta(minutes=step * 15)).isoformat(),
                         "indoor_temp": current_indoor_temp,
                         "outdoor_temp": outdoor_temp,
                         "humidity": humidity,
@@ -89,8 +91,8 @@ class SimulationWorker:
                 })
                 
                 step += 1
-                # Stream at 5 seconds intervals (hourly scaling)
-                await asyncio.sleep(5.0)
+                # Stream at 1.5 seconds intervals (15-min simulated step)
+                await asyncio.sleep(1.5)
             
         except Exception as e:
             logger.exception(f"Error in background simulation loop task: {e}")

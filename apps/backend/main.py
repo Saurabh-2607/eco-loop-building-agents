@@ -157,9 +157,9 @@ async def startup_event():
                 res = await session.execute(query)
                 sim = res.scalar_one()
                 
-        # 3. Automatically launch continuous background simulator twin starting at step 6 (Hour 23:00)
+        # 3. Automatically launch continuous background simulator twin starting at step 24 (Hour 23:00)
         bg_simulation_task = simulation_worker.start_simulation_task(
-            sim.id, sim.simulation_name, start_step=6
+            sim.id, sim.simulation_name, start_step=24
         )
     except Exception as e:
         logger.error(f"Failed to lookup or start automatic twin simulation: {e}")

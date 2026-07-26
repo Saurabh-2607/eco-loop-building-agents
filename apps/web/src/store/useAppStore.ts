@@ -449,9 +449,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
             const recDate = new Date(item.recorded_at);
             const hh = String(recDate.getHours()).padStart(2, "0");
             const mm = String(recDate.getMinutes()).padStart(2, "0");
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const formattedDate = `${months[recDate.getMonth()]} ${recDate.getDate()}`;
             const comfort = calculatePmvPpd(item.temperature);
             return {
-              timestamp: `${hh}:${mm}`,
+              timestamp: `${formattedDate}, ${hh}:${mm}`,
               indoorTemp: item.temperature,
               outdoorTemp: 26.5,
               relativeHumidity: item.humidity,
@@ -462,6 +464,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
               lightingPower: item.lighting_load
             };
           });
+        sortedMetrics = sortedMetrics.slice(-24);
       }
 
       let summaryUpdate: {
@@ -654,9 +657,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
           const recDate = new Date(m.recorded_at);
           const hh = String(recDate.getHours()).padStart(2, "0");
           const mm = String(recDate.getMinutes()).padStart(2, "0");
+          const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          const formattedDate = `${months[recDate.getMonth()]} ${recDate.getDate()}`;
           const comfort = calculatePmvPpd(m.temperature);
           return {
-            timestamp: `${hh}:${mm}`,
+            timestamp: `${formattedDate}, ${hh}:${mm}`,
             indoorTemp: m.temperature,
             outdoorTemp: 26.5,
             relativeHumidity: m.humidity,
@@ -666,7 +671,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             hvacPower: m.hvac_load,
             lightingPower: m.lighting_load
           };
-        });
+        }).slice(-24);
         
         if (mappedMetrics.length > 0) {
           const latestPoint = mappedMetrics[mappedMetrics.length - 1];

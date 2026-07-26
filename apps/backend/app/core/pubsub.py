@@ -22,12 +22,15 @@ class PubSubBroker:
         self._initialized = True
         self.redis_client = None
         self.use_redis = False
+        self._init_task = None
         
         # Local in-memory pub-sub fallback lists of asyncio.Queue
         self._subscribers: Dict[str, List[asyncio.Queue]] = defaultdict(list)
-        
-        # Test connection in background
-        asyncio.create_task(self._init_redis())
+
+    async def ensure_initialized(self):
+        if self._init_task is None:
+            self._init_task = asyncio.create_task(self._init_redis())
+            await asyncio.sleep(0)  # Yield control to let task begin executing
 
     async def _init_redis(self):
         try:
@@ -44,6 +47,7 @@ class PubSubBroker:
         """
         Publish a message to a channel.
         """
+        await self.ensure_initialized()
         message_str = json.dumps(message) if isinstance(message, (dict, list)) else str(message)
         
         if self.use_redis and self.redis_client:
@@ -78,6 +82,7 @@ class PubSubBroker:
         """
         Subscribe to a channel and yield messages as they arrive.
         """
+        await self.ensure_initialized()
         if self.use_redis and self.redis_client:
             pubsub = self.redis_client.pubsub()
             try:

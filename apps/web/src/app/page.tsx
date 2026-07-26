@@ -9,7 +9,6 @@ import TemperatureChart from "@/components/dashboard/TemperatureChart";
 import OccupancyChart from "@/components/dashboard/OccupancyChart";
 import AgentActivityFeed from "@/components/dashboard/AgentActivityFeed";
 import AIReasoningCard from "@/components/dashboard/AIReasoningCard";
-import OnboardingModal from "@/components/dashboard/OnboardingModal";
 import LoopStatus from "@/components/dashboard/LoopStatus";
 import ClosedLoopVisualization from "@/components/dashboard/ClosedLoopVisualization";
 import { useEffect } from "react";
@@ -30,8 +29,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-4">
-      <OnboardingModal />
-
       {/* ── Row 1: KPI Summary Cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-up stagger-1">
         <MetricCard

@@ -469,7 +469,7 @@ console.log("LIVE SIMULATION LOADED", {
       summary: {
         ...state.summary,
         savings: Math.min(
-          state.summary.savings + 5,
+          (state.summary.savings ?? 0) + 5,
           100
         )
       }

@@ -584,8 +584,14 @@ console.log("LIVE SIMULATION LOADED", {
       const recRes = await fetch(`${API_URL}/api/v1/recommendations/${simId}`);
       const recPayload = await recRes.json();
       
-      // 2. Fetch LangGraph natural language report
-      const repRes = await fetch(`${API_URL}/api/v1/ai/report/${simId}`);
+      // 2. Fetch LangGraph natural language report (generate if report is missing / returns 404)
+      let repRes = await fetch(`${API_URL}/api/v1/ai/report/${simId}`);
+      if (repRes.status === 404) {
+        await fetch(`${API_URL}/api/v1/ai/analyze/${simId}`, {
+          method: "POST"
+        });
+        repRes = await fetch(`${API_URL}/api/v1/ai/report/${simId}`);
+      }
       const repPayload = await repRes.json();
 
       let mappedDecisions: AgentDecision[] = [];

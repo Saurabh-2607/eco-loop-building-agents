@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/layout/Sidebar";
+import BottomNavbar from "@/components/layout/BottomNavbar";
 import Navbar from "@/components/layout/Navbar";
 import { cn } from "@/lib/utils";
 
-import { SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const geist = Geist({
@@ -48,19 +47,26 @@ export default function RootLayout({
         newsreader.variable
       )}
     >
-      <body className={cn("h-full bg-background text-foreground font-sans")}>
+      {/* Set outer body to off-white bg-neutral-50/50 for beautiful backdrop contrast */}
+      <body className={cn("h-full bg-neutral-50/50 text-foreground font-sans")}>
         <TooltipProvider>
-          <SidebarProvider>
-            <div className="flex h-full w-full overflow-hidden">
-              <Sidebar />
-              <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                <Navbar />
-                <main className="flex-1 overflow-y-auto bg-background p-6">
-                  {children}
-                </main>
-              </div>
+          {/* Centered Application Shell Wrapper */}
+          <div className="h-full w-full flex items-center justify-center">
+            <div 
+              className="max-w-[1440px] w-full h-full flex flex-col bg-background relative border-x border-neutral-200/80 shadow-sm overflow-hidden"
+            >
+              {/* Top Header */}
+              <Navbar />
+              
+              {/* Scrollable Main Area (with pb-28 to clear bottom navbar) */}
+              <main className="flex-1 overflow-y-auto bg-background p-6 pb-28">
+                {children}
+              </main>
+
+              {/* Centered Floating Bottom Navbar Dock */}
+              <BottomNavbar />
             </div>
-          </SidebarProvider>
+          </div>
         </TooltipProvider>
       </body>
     </html>

@@ -3,11 +3,16 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Cpu, Info, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import SystemStatus from "@/components/dashboard/SystemStatus";
 
 export default function SettingsPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in select-none">
-      {/* System Information */}
+      
+      {/* 1. Runtime Environment (Simulation Model Execution Variables) */}
+      <SystemStatus />
+
+      {/* 2. System Information */}
       <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm flex flex-col">
         <CardHeader className="pb-3 border-b border-zinc-100 dark:border-zinc-900/60 flex-shrink-0">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -22,7 +27,7 @@ export default function SettingsPage() {
             className="bg-neutral-50/50 border border-neutral-100 rounded-xl p-3 flex items-center justify-between"
             style={{ borderRadius: 12 }}
           >
-            <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Building Model</span>
+            <span className="text-[11px] font-bold text-neutral-450 uppercase tracking-wider">Building Model</span>
             <span className="text-sm font-semibold text-neutral-900">Chicago Office Standard</span>
           </div>
 
@@ -31,7 +36,7 @@ export default function SettingsPage() {
             className="bg-neutral-50/50 border border-neutral-100 rounded-xl p-3 flex items-center justify-between"
             style={{ borderRadius: 12 }}
           >
-            <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">AI Model</span>
+            <span className="text-[11px] font-bold text-neutral-450 uppercase tracking-wider">AI Model</span>
             <span className="text-sm font-semibold text-neutral-900 font-mono">qwen3:8b</span>
           </div>
 
@@ -40,7 +45,7 @@ export default function SettingsPage() {
             className="bg-neutral-50/50 border border-neutral-100 rounded-xl p-3 flex items-center justify-between"
             style={{ borderRadius: 12 }}
           >
-            <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Simulation Engine</span>
+            <span className="text-[11px] font-bold text-neutral-450 uppercase tracking-wider">Simulation Engine</span>
             <span className="text-sm font-semibold text-neutral-900">EnergyPlus</span>
           </div>
 
@@ -49,7 +54,7 @@ export default function SettingsPage() {
             className="bg-neutral-50/50 border border-neutral-100 rounded-xl p-3 flex items-center justify-between"
             style={{ borderRadius: 12 }}
           >
-            <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Status</span>
+            <span className="text-[11px] font-bold text-neutral-455 uppercase tracking-wider">Status</span>
             <Badge
               className="font-extrabold px-2 py-0.5 rounded text-[9px] uppercase tracking-wider flex items-center gap-1 border"
               style={{ backgroundColor: "#fafafa", borderColor: "#e5e5e5", color: "#737373" }}
@@ -61,7 +66,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* About EcoLoop */}
+      {/* 3. About EcoLoop */}
       <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm flex flex-col">
         <CardHeader className="pb-3 border-b border-zinc-100 dark:border-zinc-900/60 flex-shrink-0">
           <CardTitle className="text-base font-semibold flex items-center gap-2">

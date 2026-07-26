@@ -5,7 +5,6 @@ import { useAppStore } from "@/store/useAppStore";
 import { Play, Pause, Cpu, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -69,13 +68,8 @@ export default function Navbar() {
       className="flex-shrink-0 flex items-center justify-between px-6 select-none border-b border-border bg-background"
       style={{ height: 64 }}
     >
-      {/* Left: sidebar toggle + page title */}
+      {/* Left: page title */}
       <div className="flex items-center gap-3">
-        <SidebarTrigger
-          className="h-9 w-9 transition-colors flex items-center justify-center rounded-xl border border-zinc-200"
-          style={{ color: "#737373" }}
-          aria-label="Toggle navigation"
-        />
         <h1
           className="text-base font-semibold tracking-tight"
           style={{ letterSpacing: "-0.015em", color: "#171717" }}

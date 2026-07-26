@@ -1,8 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Brain, ArrowRight, ArrowDown, Activity, Settings, TrendingDown, ClipboardList } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Brain, Activity, Settings, TrendingDown, ClipboardList } from "lucide-react";
 
 export default function AIAgentThinking() {
   const steps = [
@@ -10,78 +9,106 @@ export default function AIAgentThinking() {
       label: "Input Data",
       value: "EnergyPlus Results",
       desc: "Reading dynamic hourly building telemetry parameters.",
-      icon: <Activity className="h-4 w-4 text-emerald-500" />,
-      color: "border-emerald-500/20 bg-emerald-500/5 text-emerald-500"
+      icon: Activity,
     },
     {
       label: "Analysis",
       value: "HVAC consumes 85% energy",
-      desc: "Isolating mechanical load spikes during high building load peaks.",
-      icon: <Brain className="h-4 w-4 text-amber-500" />,
-      color: "border-amber-500/20 bg-amber-500/5 text-amber-500"
+      desc: "Isolating mechanical load spikes during building load peaks.",
+      icon: Brain,
     },
     {
       label: "Decision",
       value: "Optimize HVAC schedule",
-      desc: "Modifying cooling setpoint maps and reducing night fan speed profiles.",
-      icon: <Settings className="h-4 w-4 text-violet-500" />,
-      color: "border-violet-500/20 bg-violet-500/5 text-violet-500"
+      desc: "Modifying cooling setpoint maps and reducing fan speeds.",
+      icon: Settings,
     },
     {
       label: "Expected Impact",
       value: "12% energy reduction",
-      desc: "Projecting total utility demand load reductions inside simulated runs.",
-      icon: <TrendingDown className="h-4 w-4 text-sky-500" />,
-      color: "border-sky-500/20 bg-sky-500/5 text-sky-500"
+      desc: "Projecting load reductions inside simulated runs.",
+      icon: TrendingDown,
     },
     {
       label: "Result",
       value: "Measured savings",
-      desc: "Checking verified timeseries database columns to validate savings.",
-      icon: <ClipboardList className="h-4 w-4 text-pink-500" />,
-      color: "border-pink-500/20 bg-pink-500/5 text-pink-500"
+      desc: "Checking verified database columns to validate energy savings.",
+      icon: ClipboardList,
     }
   ];
 
   return (
-    <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm overflow-hidden select-none">
-      <CardHeader className="pb-3 border-b border-zinc-100 dark:border-zinc-900/60 bg-zinc-50/50 dark:bg-zinc-900/10">
-        <CardTitle className="text-base font-semibold flex items-center gap-2">
-          <Brain className="h-4.5 w-4.5 text-violet-500 animate-pulse" />
+    <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm flex flex-col">
+      <CardHeader className="pb-2.5 border-b border-zinc-100 dark:border-zinc-900/60 flex-shrink-0">
+        <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+          <Brain className="h-4.5 w-4.5 text-neutral-500" />
           AI Reasoning Timeline
         </CardTitle>
-        <CardDescription>Visualized LangGraph agent optimization process flow</CardDescription>
+        <CardDescription className="text-[11px] leading-normal">Visualized LangGraph agent optimization process flow</CardDescription>
       </CardHeader>
-      <CardContent className="p-6">
-        <div className="flex flex-col md:flex-row items-center md:items-stretch justify-between gap-4 relative">
-          {steps.map((step, idx) => (
-            <div key={idx} className="flex-1 flex flex-col md:flex-row items-center justify-between gap-4 w-full">
-              <div className="flex-1 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4 rounded-xl shadow-sm flex flex-col items-center text-center space-y-3 relative hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors w-full">
-                <div className={cn("h-8 w-8 rounded-lg border flex items-center justify-center shadow-sm", step.color)}>
-                  {step.icon}
-                </div>
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Step {idx + 1}</span>
-                  <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-tight">{step.label}</h4>
-                  <p className="text-[11px] font-bold text-zinc-800 dark:text-zinc-200 mt-1">
-                    {step.value}
-                  </p>
-                  <p className="text-[9px] leading-relaxed text-zinc-450 dark:text-zinc-500 mt-1 max-w-[140px] mx-auto font-medium">
-                    {step.desc}
-                  </p>
-                </div>
+      <CardContent className="p-3 space-y-2">
+        {steps.map((step, idx) => {
+          const Icon = step.icon;
+          return (
+            <div
+              key={idx}
+              className="bg-neutral-50/50 border border-neutral-100 rounded-2xl p-2.5 flex items-start gap-3"
+              style={{ borderRadius: 16 }}
+            >
+              {/* Left Side: Icon Circle */}
+              <div
+                className="flex items-center justify-center flex-shrink-0"
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 12,
+                  border: "1.5px solid #171717",
+                  background: "#171717",
+                  color: "#ffffff",
+                }}
+              >
+                <Icon style={{ width: 12, height: 12 }} />
               </div>
-              
-              {/* Arrow separator */}
-              {idx < steps.length - 1 && (
-                <div className="flex items-center justify-center text-zinc-300 dark:text-zinc-700 flex-shrink-0">
-                  <ArrowRight className="hidden md:block h-5 w-5" />
-                  <ArrowDown className="block md:hidden h-5 w-5 my-1" />
-                </div>
-              )}
+
+              {/* Right Side: Text elements */}
+              <div className="flex flex-col min-w-0">
+                <span
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    color: "#a3a3a3",
+                    lineHeight: 1.0,
+                  }}
+                >
+                  Step {idx + 1}: {step.label}
+                </span>
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "#171717",
+                    marginTop: 1,
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {step.value}
+                </span>
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: "#737373",
+                    marginTop: 0.5,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {step.desc}
+                </span>
+              </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </CardContent>
     </Card>
   );

@@ -76,7 +76,7 @@ export default function OccupancyChart() {
             <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-zinc-100 dark:text-zinc-900" />
               <XAxis dataKey="time" stroke="#71717a" fontSize={11} tickLine={false} axisLine={false} />
-              <YAxis stroke="#71717a" fontSize={11} tickLine={false} axisLine={false} />
+              <YAxis stroke="#71717a" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} domain={[0, "auto"]} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "#171717",

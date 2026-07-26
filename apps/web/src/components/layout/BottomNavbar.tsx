@@ -6,9 +6,6 @@ import { useAppStore } from "@/store/useAppStore";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
-  BarChart3,
-  Play,
-  Cpu,
   Settings,
 } from "lucide-react";
 

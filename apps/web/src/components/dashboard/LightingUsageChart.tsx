@@ -80,7 +80,7 @@ export default function LightingUsageChart() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-zinc-100 dark:text-zinc-900" />
               <XAxis dataKey="time" stroke="#71717a" fontSize={11} tickLine={false} axisLine={false} />
-              <YAxis stroke="#71717a" fontSize={11} tickLine={false} axisLine={false} unit=" kW" />
+              <YAxis stroke="#71717a" fontSize={11} tickLine={false} axisLine={false} unit=" kW" domain={[0, "auto"]} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "#171717",

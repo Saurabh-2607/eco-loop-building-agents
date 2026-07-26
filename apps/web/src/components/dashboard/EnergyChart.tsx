@@ -107,6 +107,7 @@ export default function EnergyChart() {
                 tickLine={false} 
                 axisLine={false} 
                 unit=" kW"
+                domain={[0, "auto"]}
               />
               <Tooltip 
                 contentStyle={{ 

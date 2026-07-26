@@ -11,7 +11,17 @@ import {
   Cpu, 
   Settings 
 } from "lucide-react";
-
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarGroup,
+  SidebarGroupContent
+} from "@/components/ui/sidebar";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -21,7 +31,7 @@ const navigation = [
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-export default function Sidebar() {
+export default function AppSidebar() {
   const pathname = usePathname();
   const { detailedStatus } = useAppStore();
 
@@ -51,9 +61,9 @@ export default function Sidebar() {
   })();
 
   return (
-    <aside className="w-64 bg-zinc-950 border-r border-zinc-800 text-zinc-300 flex flex-col h-full flex-shrink-0">
+    <Sidebar className="bg-zinc-950 border-r border-zinc-800 text-zinc-300">
       {/* Brand Header */}
-      <div className="h-16 flex items-center gap-3 px-6 border-b border-zinc-800">
+      <SidebarHeader className="h-16 flex flex-row items-center gap-3 px-6 border-b border-zinc-800 flex-shrink-0">
         <div className="text-white text-base font-bold flex-shrink-0">
           ▲
         </div>
@@ -61,48 +71,53 @@ export default function Sidebar() {
           <span className="font-bold text-white text-sm tracking-tight block">EcoLoop</span>
           <span className="text-zinc-500 text-[10px] font-bold font-mono tracking-wider block -mt-1">BUILDING AGENT</span>
         </div>
-      </div>
+      </SidebarHeader>
 
+      {/* Navigation Content */}
+      <SidebarContent className="px-4 py-4">
+        <SidebarGroup className="p-0">
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-1">
+              {navigation.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <SidebarMenuItem key={item.name}>
+                    <SidebarMenuButton 
+                      render={<Link href={item.href} />}
+                      isActive={isActive}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-205 hover:bg-zinc-900/50 hover:text-zinc-200",
+                        isActive ? "bg-zinc-900 text-white border border-zinc-800" : "text-zinc-400"
+                      )}
+                    >
+                      <item.icon className={cn(
+                        "h-5 w-5 transition-colors flex-shrink-0",
+                        isActive ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"
+                      )} />
+                      <span>{item.name}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
 
-      {/* Navigation Links */}
-      <nav className="flex-1 px-4 py-6 space-y-1">
-        {navigation.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group",
-                isActive 
-                  ? "bg-zinc-900 border border-zinc-800 text-white shadow-inner" 
-                  : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50"
-              )}
-            >
-              <item.icon className={cn(
-                "h-5 w-5 transition-colors",
-                isActive ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"
-              )} />
-              {item.name}
-            </Link>
-          );
-        })}
-      </nav>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
 
       {/* Footer Info: Step and Substep Tracker */}
-      <div className="p-4 border-t border-zinc-800">
+      <SidebarFooter className="p-4 border-t border-zinc-800">
         <div className="bg-zinc-900/40 rounded-lg p-3 border border-zinc-850 space-y-2 text-left">
           <div className="flex items-center gap-2">
             <span className={cn("h-2 w-2 rounded-full", statusInfo.color)} />
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Active Step</span>
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest font-mono">Active Step</span>
           </div>
           <div className="space-y-0.5">
             <div className="text-xs font-bold text-white tracking-tight">{statusInfo.step}</div>
-            <div className="text-[10px] leading-relaxed text-zinc-500 font-medium">{statusInfo.substep}</div>
+            <div className="text-[10px] leading-relaxed text-zinc-505/80 font-medium">{statusInfo.substep}</div>
           </div>
         </div>
-      </div>
-    </aside>
+      </SidebarFooter>
+    </Sidebar>
   );
 }
-

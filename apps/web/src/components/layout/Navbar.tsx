@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Play, Pause, Cpu, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -41,9 +42,11 @@ export default function Navbar() {
   return (
     <header className="h-16 border-b border-border bg-card flex items-center justify-between px-8 select-none flex-shrink-0">
       {/* Title */}
-      <div>
+      <div className="flex items-center gap-2">
+        <SidebarTrigger className="h-8 w-8 text-zinc-500" />
         <h1 className="font-semibold text-sm tracking-tight text-foreground">{pageTitle}</h1>
       </div>
+
 
       {/* Simulator Controls & Badges */}
       <div className="flex items-center gap-4">

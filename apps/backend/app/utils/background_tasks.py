@@ -45,6 +45,7 @@ async def broadcast_dummy_telemetry_loop():
                     "timestamp": datetime.utcnow().isoformat(),
                     "indoor_temp": round(current_temp, 2),
                     "hvac_power_kw": round(total_power, 2),
+                    "occupancy": random.randint(15, 35),
                     "status": "simulating"
                 }
                 

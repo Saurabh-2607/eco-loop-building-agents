@@ -60,11 +60,10 @@ export default function ClosedLoopVisualization() {
                 {/* Left side: Icon + Name and description */}
                 <div className="flex items-center gap-3.5 min-w-0 flex-1">
                   <div
-                    className={cn("flex items-center justify-center flex-shrink-0", isActive && "animate-pulse")}
+                    className={cn("flex items-center justify-center flex-shrink-0 rounded-3xl", isActive && "animate-pulse")}
                     style={{
                       width: 32,
                       height: 32,
-                      borderRadius: "50%",
                       border: `1.5px solid ${isCompleted || isActive ? "#171717" : "#e5e5e5"}`,
                       background: isCompleted ? "#171717" : isActive ? "#f5f5f5" : "#fafafa",
                       color: isCompleted ? "#ffffff" : isActive ? "#171717" : "#a3a3a3",

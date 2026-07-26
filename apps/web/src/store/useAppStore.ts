@@ -53,6 +53,12 @@ interface AppStore {
 
 let socket: WebSocket | null = null;
 
+function calculatePmvPpd(temp: number) {
+  const pmv = parseFloat(((temp - 22.5) * 0.25).toFixed(2));
+  const ppd = parseFloat((100.0 - 95.0 * Math.exp(-0.03353 * Math.pow(pmv, 4) - 0.2179 * Math.pow(pmv, 2))).toFixed(1));
+  return { pmv, ppd };
+}
+
 export const useAppStore = create<AppStore>((set, get) => ({
   simState: {
     runId: "",
@@ -205,14 +211,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
         if (data.event === "SIMULATION_STEP") {
           const payload = data.payload;
+          const comfort = calculatePmvPpd(payload.indoor_temp || 22.0);
           const metric: SimulationMetric = {
             timestamp: payload.timestamp || new Date().toLocaleTimeString(),
             indoorTemp: payload.indoor_temp || 22.0,
             outdoorTemp: payload.outdoor_temp || 28.5,
             relativeHumidity: payload.humidity || 48.0,
             occupancyCount: payload.occupancy || 0,
-            pmv: payload.pmv || 0.0,
-            ppd: payload.ppd || 0.0,
+            pmv: comfort.pmv,
+            ppd: comfort.ppd,
             hvacPower: payload.hvac_power_kw || 0.0,
             lightingPower: payload.lighting_power_kw || 0.0
           };
@@ -307,14 +314,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
             const recDate = new Date(item.recorded_at);
             const hh = String(recDate.getHours()).padStart(2, "0");
             const mm = String(recDate.getMinutes()).padStart(2, "0");
+            const comfort = calculatePmvPpd(item.temperature);
             return {
               timestamp: `${hh}:${mm}`,
               indoorTemp: item.temperature,
               outdoorTemp: 26.5,
               relativeHumidity: item.humidity,
               occupancyCount: item.occupancy,
-              pmv: 0,
-              ppd: 0,
+              pmv: comfort.pmv,
+              ppd: comfort.ppd,
               hvacPower: item.hvac_load,
               lightingPower: item.lighting_load
             };
@@ -492,14 +500,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
           const recDate = new Date(m.recorded_at);
           const hh = String(recDate.getHours()).padStart(2, "0");
           const mm = String(recDate.getMinutes()).padStart(2, "0");
+          const comfort = calculatePmvPpd(m.temperature);
           return {
             timestamp: `${hh}:${mm}`,
             indoorTemp: m.temperature,
             outdoorTemp: 26.5,
             relativeHumidity: m.humidity,
             occupancyCount: m.occupancy,
-            pmv: 0.0,
-            ppd: 0.0,
+            pmv: comfort.pmv,
+            ppd: comfort.ppd,
             hvacPower: m.hvac_load,
             lightingPower: m.lighting_load
           };

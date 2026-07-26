@@ -28,8 +28,41 @@ export default function Navbar() {
     }
   })();
 
-  const isRunning = simState.status === "running";
   const runId = simState.runId;
+
+  // Determine button state dynamic properties based on the simulation state
+  const buttonConfig = (() => {
+    switch (simState.status) {
+      case "running":
+        return {
+          text: "Pause Simulation",
+          icon: <Pause className="h-4 w-4" aria-hidden />,
+          style: { backgroundColor: "#ffffff", borderColor: "#e5e5e5", color: "#171717", border: "1px solid #e5e5e5" },
+          onClick: () => setSimStatus("paused"),
+        };
+      case "paused":
+        return {
+          text: "Resume Simulation",
+          icon: <Play className="h-4 w-4 fill-current" aria-hidden />,
+          style: { backgroundColor: "#171717", color: "#ffffff" },
+          onClick: () => setSimStatus("running"),
+        };
+      case "finished":
+        return {
+          text: "Restart Simulation",
+          icon: <Play className="h-4 w-4 fill-current" aria-hidden />,
+          style: { backgroundColor: "#171717", color: "#ffffff" },
+          onClick: () => startSimulation(simState.currentModel || "Chicago Office Standard Simulation"),
+        };
+      default: // idle or error
+        return {
+          text: "Start Simulation",
+          icon: <Play className="h-4 w-4 fill-current" aria-hidden />,
+          style: { backgroundColor: "#171717", color: "#ffffff" },
+          onClick: () => startSimulation(simState.currentModel || "Chicago Office Standard Simulation"),
+        };
+    }
+  })();
 
   return (
     <header
@@ -69,29 +102,14 @@ export default function Navbar() {
           </Badge>
         </div>
 
-        {/* Pause / Start */}
+        {/* Dynamic Pause / Start / Resume / Restart Button */}
         <Button
-          onClick={() => {
-            if (isRunning) {
-              setSimStatus("paused");
-            } else {
-              startSimulation(simState.currentModel || "Chicago Office Standard Simulation");
-            }
-          }}
-          className="h-9 text-xs font-semibold px-4 flex items-center gap-2"
-          style={{ backgroundColor: "#ffffff", borderColor: "#e5e5e5", color: "#171717", border: "1px solid #e5e5e5" }}
+          onClick={buttonConfig.onClick}
+          className="h-9 text-xs font-semibold px-4 flex items-center gap-2 transition-colors"
+          style={buttonConfig.style}
         >
-          {isRunning ? (
-            <>
-              <Pause className="h-4 w-4" aria-hidden />
-              Pause Simulation
-            </>
-          ) : (
-            <>
-              <Play className="h-4 w-4 fill-current" aria-hidden />
-              Start Simulation
-            </>
-          )}
+          {buttonConfig.icon}
+          {buttonConfig.text}
         </Button>
 
         {/* Force Optimize */}

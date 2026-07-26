@@ -157,6 +157,17 @@ class SimulationService:
                     "temperature": 22.4
                 }
             })
+	   # Trigger LangGraph AI analysis after simulation completion
+try:
+    from app.ai.service import AIService
+    from app.database.database import get_db
+    from app.api.dependencies import get_ai_service
+
+    ai_service = next(get_ai_service())
+    await ai_service.run_ai_optimization(simulation_id)
+
+except Exception as e:
+    logger.error(f"AI report generation failed: {e}")
             await ws_manager.broadcast(complete_event)
             
         except Exception as e:

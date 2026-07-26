@@ -7,8 +7,8 @@ import {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 const WS_URL = typeof window !== "undefined"
-  ? `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/ws`
-  : "ws://localhost:8000/ws";
+  ? `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/ws/live`
+  : "ws://localhost:8000/ws/live";
 
 interface AppStore {
   // States
@@ -290,6 +290,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
             };
           })
         : [];
+
+console.log("LIVE SIMULATION LOADED", {
+  simId,
+  metricsCount: mappedMetrics.length,
+  firstMetric: mappedMetrics[0],
+  lastMetric: mappedMetrics[mappedMetrics.length - 1]
+});
 
       set({
         simState: {

@@ -5,8 +5,11 @@ eco.srbh.site {
         reverse_proxy backend:8000
     }
 
-    handle /ws {
-        reverse_proxy backend:8000
+    handle /ws/* {
+        reverse_proxy backend:8000 {
+            header_up Connection {http.request.header.Connection}
+            header_up Upgrade {http.request.header.Upgrade}
+        }
     }
 
     handle {

@@ -1,13 +1,8 @@
-import sys
-import os
 import asyncio
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
-
-# Insert apps/backend into path for package resolution
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app.core.config import settings
 from app.core.logging import setup_logging
@@ -37,9 +32,32 @@ app.add_middleware(
 # Include versioned API router under prefix /api/v1
 app.include_router(api_router, prefix="/api/v1")
 
-# Mount WS live at the root level also for client ease of connection
-from app.api.v1.routes.websocket import router as ws_router
-app.include_router(ws_router)
+from fastapi import WebSocket, WebSocketDisconnect, Depends
+from uuid import uuid4
+from app.websocket.manager import WebSocketManager
+from app.api.dependencies import get_websocket_manager
+
+
+@app.websocket("/ws/live")
+async def websocket_endpoint(
+    websocket: WebSocket,
+    manager: WebSocketManager = Depends(get_websocket_manager)
+):
+    client_id = f"client-{uuid4().hex[:6]}"
+
+    await manager.connect(websocket, client_id)
+
+    await websocket.send_json({
+        "event": "HANDSHAKE",
+        "status": "Connected",
+        "client_id": client_id
+    })
+
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
 
 @app.get("/")
 def root():

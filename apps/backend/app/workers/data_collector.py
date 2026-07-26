@@ -52,7 +52,7 @@ async def run_data_collector():
                         energy_usage=energy,
                         hvac_load=hvac_power,
                         lighting_load=lighting_power,
-                        recorded_at=datetime.utcnow() + timedelta(hours=step)
+                        recorded_at=datetime.fromisoformat(data.get("recorded_at"))
                     )
                     await metrics_repo.create(db_metric)
                 

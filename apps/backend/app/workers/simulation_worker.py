@@ -77,6 +77,7 @@ class SimulationWorker:
                     "data": {
                         "step": step,
                         "timestamp": (current_date + timedelta(hours=step)).strftime("%H:%M"),
+                        "recorded_at": (current_date + timedelta(hours=step)).isoformat(),
                         "indoor_temp": current_indoor_temp,
                         "outdoor_temp": outdoor_temp,
                         "humidity": humidity,

@@ -6,6 +6,78 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Cpu, ThumbsUp, ThumbsDown, Thermometer, Sun } from "lucide-react";
 import InfoTooltip from "@/components/dashboard/InfoTooltip";
+import { cn } from "@/lib/utils";
+
+// Helper bold text parser
+function parseBoldText(text: string) {
+  const parts = text.split(/\*\*([^*]+)\*\*/g);
+  return parts.map((part, i) => {
+    // Every odd item is a bold match
+    if (i % 2 === 1) {
+      return (
+        <strong key={i} className="font-bold text-zinc-900 dark:text-zinc-100">
+          {part}
+        </strong>
+      );
+    }
+    return part;
+  });
+}
+
+// Custom Markdown structure formatter
+function renderMarkdown(text: string) {
+  if (!text) return null;
+
+  // Pre-process: split inline headers stuck together (e.g. "Report ## 1. Executive Summary" -> "Report\n## 1. Executive Summary")
+  let formattedText = text.replace(/([^\n])(##?\s+\d+\.)/g, "$1\n\n$2");
+  formattedText = formattedText.replace(/([^\n])(-\s+\*)/g, "$1\n$2");
+
+  const lines = formattedText.split("\n");
+
+  return (
+    <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-zinc-200 scrollbar-track-transparent">
+      {lines.map((line, idx) => {
+        const trimmed = line.trim();
+        if (!trimmed) return null;
+
+        // Check for Headings
+        if (trimmed.startsWith("# ") || trimmed.startsWith("## ") || trimmed.startsWith("### ")) {
+          const depth = trimmed.startsWith("# ") ? 1 : trimmed.startsWith("## ") ? 2 : 3;
+          const cleanText = trimmed.replace(/^##?\s+/g, "").replace(/^###\s+/g, "");
+          return (
+            <h4
+              key={idx}
+              className={cn(
+                "font-bold text-zinc-900 dark:text-zinc-100 tracking-tight",
+                depth === 1 ? "text-[11px] uppercase tracking-wider text-zinc-400 font-extrabold mt-2 first:mt-0" : "text-xs mt-3 first:mt-0"
+              )}
+            >
+              {cleanText}
+            </h4>
+          );
+        }
+
+        // Check for Bullet Lists
+        if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+          const content = trimmed.substring(2);
+          return (
+            <div key={idx} className="flex gap-2 text-xs text-zinc-700 dark:text-zinc-300 ml-3 align-top leading-relaxed">
+              <span className="text-zinc-400 select-none">•</span>
+              <span className="font-medium">{parseBoldText(content)}</span>
+            </div>
+          );
+        }
+
+        // Regular paragraph
+        return (
+          <p key={idx} className="text-xs text-zinc-700 dark:text-zinc-350 leading-relaxed font-medium">
+            {parseBoldText(trimmed)}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function AIReasoningCard() {
   const { decisions, submitFeedback } = useAppStore();
@@ -69,11 +141,9 @@ export default function AIReasoningCard() {
             </div>
 
             {/* Explanation text */}
-            <div className="bg-neutral-50/50 border border-neutral-100 rounded-3xl p-5">
-              <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-2">Agent Rationale</span>
-              <p className="text-sm text-neutral-800 leading-relaxed font-medium">
-                {latestDecision.reason}
-              </p>
+            <div className="bg-neutral-50/50 border border-neutral-100 dark:bg-zinc-900/10 dark:border-zinc-900 rounded-3xl p-5">
+              <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-2.5">Agent Rationale</span>
+              {renderMarkdown(latestDecision.reason)}
             </div>
 
             {/* Validation review and telemetry details */}

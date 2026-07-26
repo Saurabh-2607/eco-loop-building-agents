@@ -4,7 +4,6 @@ import { useAppStore } from "@/store/useAppStore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Check, RefreshCw } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export default function LoopStatus() {
   const { simState, aiReport, decisions } = useAppStore();
@@ -52,23 +51,23 @@ export default function LoopStatus() {
         return { label: "Waiting for next simulation", variant: "waiting" };
 
       default:
-        return { label: "Awaiting boot sequence", variant: "pending" };
+        return { label: "Awaiting sequence boot", variant: "pending" };
     }
   };
 
   const stages = ["OBSERVE", "ANALYZE", "DECIDE", "ACT", "LEARN"];
 
   return (
-    <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm overflow-hidden col-span-1">
-      <CardHeader className="pb-3 border-b border-zinc-100 dark:border-zinc-900/60">
+    <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm overflow-hidden h-full flex flex-col">
+      <CardHeader className="pb-3 border-b border-zinc-100 dark:border-zinc-900/60 flex-shrink-0">
         <CardTitle className="text-base font-semibold flex items-center gap-2">
           <RefreshCw className="h-4.5 w-4.5 text-indigo-500 animate-spin" style={{ animationDuration: "8s" }} />
           EcoLoop Autonomous Loop
         </CardTitle>
         <CardDescription>Continuous feedback control loop parameters</CardDescription>
       </CardHeader>
-      <CardContent className="p-4">
-        <div className="space-y-4 text-xs font-semibold">
+      <CardContent className="p-4 flex-1 flex flex-col justify-between">
+        <div className="space-y-2.5 flex-1 flex flex-col justify-between">
           {stages.map((stage) => {
             const status = getStageStatus(stage);
             const isComplete = status.variant === "success";
@@ -77,18 +76,31 @@ export default function LoopStatus() {
             const isReady = status.variant === "ready";
 
             return (
-              <div key={stage} className="flex flex-col gap-1 border-b border-zinc-100 dark:border-zinc-900/40 pb-3 last:border-0 last:pb-0">
+              <div
+                key={stage}
+                className="bg-neutral-50/50 border border-neutral-100 rounded-3xl p-3.5 flex flex-col gap-1.5 flex-1 justify-center"
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-zinc-900 dark:text-zinc-50 font-bold uppercase tracking-wider text-[10px]">{stage}</span>
+                  {/* Top: Gray uppercase small tracking label */}
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                      color: "#a3a3a3",
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {stage}
+                  </span>
                   <Badge
-                    className={cn(
-                      "font-extrabold px-1.5 py-0 rounded text-[9px] uppercase flex items-center gap-1 border",
-                      isComplete && "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400",
-                      isActive && "bg-violet-500/10 text-violet-600 border-violet-500/20 dark:text-violet-400 animate-pulse",
-                      isReady && "bg-sky-500/10 text-sky-600 border-sky-500/20 dark:text-sky-400",
-                      isWaiting && "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400",
-                      status.variant === "pending" && "bg-zinc-100 text-zinc-400 border-zinc-200/50 dark:bg-zinc-900 dark:border-zinc-800"
-                    )}
+                    className="font-extrabold px-2.5 py-0.5 rounded text-[9px] uppercase tracking-wider flex items-center gap-1 border flex-shrink-0"
+                    style={{
+                      backgroundColor: isComplete ? "#fafafa" : isActive ? "#f5f5f5" : "#ffffff",
+                      borderColor: isComplete || isActive ? "#e5e5e5" : "#f0f0f0",
+                      color: isComplete ? "#737373" : isActive ? "#171717" : "#a3a3a3",
+                    }}
                   >
                     {isComplete && <Check className="h-2.5 w-2.5" />}
                     {isWaiting && <Clock className="h-2.5 w-2.5" />}
@@ -96,7 +108,15 @@ export default function LoopStatus() {
                     {isComplete ? "COMPLETED" : isActive ? "PROCESSING" : isReady ? "READY" : isWaiting ? "WAITING" : "PENDING"}
                   </Badge>
                 </div>
-                <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500">
+                {/* Bottom: Dark bold non-truncated status text */}
+                <span
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#171717",
+                    lineHeight: 1.25,
+                  }}
+                >
                   {status.label}
                 </span>
               </div>

@@ -37,12 +37,13 @@ export default function OnboardingModal() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6 shadow-xl rounded-2xl select-none">
+      <DialogContent className="max-w-md p-6 select-none">
         <DialogHeader className="space-y-2">
           <div className="mx-auto h-12 w-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20">
             <Sparkles className="h-6 w-6 fill-current animate-pulse" />
           </div>
-          <DialogTitle className="text-xl font-bold text-center text-zinc-900 dark:text-white">
+          <DialogTitle className="text-xl font-bold text-center text-foreground">
+
             Welcome to EcoLoop
           </DialogTitle>
           <DialogDescription className="text-center text-xs text-zinc-500 max-w-xs mx-auto">
@@ -69,14 +70,15 @@ export default function OnboardingModal() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2 mt-4">
-          <Button variant="outline" onClick={handleDismiss} className="flex-1 font-semibold text-xs h-9 border border-zinc-205/50 text-zinc-500 hover:bg-zinc-50">
+          <Button variant="outline" onClick={handleDismiss} className="flex-1 text-xs h-9">
             Skip Intro
           </Button>
-          <Button onClick={handleStartSim} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs h-9 shadow-[0_4px_12px_rgba(16,185,129,0.2)]">
+          <Button onClick={handleStartSim} className="flex-1 text-xs h-9">
             <PlayCircle className="h-4 w-4 mr-1.5 fill-current" />
             Start Simulation
           </Button>
         </div>
+
       </DialogContent>
     </Dialog>
   );

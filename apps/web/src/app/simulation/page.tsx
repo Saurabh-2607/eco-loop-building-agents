@@ -70,6 +70,7 @@ export default function Simulation() {
             {/* Run Actions */}
             <div className="flex gap-2">
               <Button 
+                variant={isRunning ? "secondary" : "default"}
                 onClick={() => {
                   if (isRunning) {
                     setSimStatus("paused");
@@ -77,7 +78,7 @@ export default function Simulation() {
                     startSimulation("Chicago Office Standard Simulation");
                   }
                 }}
-                className={`flex-1 font-semibold text-xs h-9 ${isRunning ? "bg-amber-600 hover:bg-amber-700 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white"}`}
+                className="flex-1 text-xs h-9 font-semibold"
               >
                 {isRunning ? (
                   <>
@@ -94,11 +95,12 @@ export default function Simulation() {
               <Button 
                 variant="outline" 
                 onClick={() => setSimStatus("idle")}
-                className="font-semibold text-xs h-9 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400"
+                className="text-xs h-9 font-semibold"
               >
                 <RotateCcw className="h-4 w-4 mr-1.5" />
                 Reset
               </Button>
+
             </div>
 
             {/* Speed Options */}
@@ -208,10 +210,11 @@ export default function Simulation() {
 
             <Button 
               onClick={handleApplyOverride}
-              className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs h-9 border border-zinc-800"
+              className="w-full text-xs h-9 font-semibold"
             >
               Apply Manual Actuations
             </Button>
+
           </CardContent>
         </Card>
       </div>

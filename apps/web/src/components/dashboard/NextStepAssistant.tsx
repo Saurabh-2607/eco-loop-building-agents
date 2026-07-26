@@ -58,13 +58,15 @@ export default function NextStepAssistant() {
 
   return (
     <div className="fixed bottom-6 right-6 z-50 animate-bounce" style={{ animationDuration: "3s" }}>
-      <Card className="max-w-xs border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4 shadow-2xl rounded-xl relative select-none">
-        <button 
+      <Card className="max-w-xs p-4 relative select-none">
+        <Button 
+          variant="ghost"
+          size="icon"
           onClick={() => setVisible(false)}
-          className="absolute top-2 right-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+          className="absolute top-2 right-2 h-6 w-6 text-muted-foreground"
         >
           <X className="h-3.5 w-3.5" />
-        </button>
+        </Button>
 
         <CardContent className="p-0 space-y-3">
           <div className="flex gap-2.5 items-start">
@@ -72,8 +74,8 @@ export default function NextStepAssistant() {
               <HelpCircle className="h-4 w-4" />
             </div>
             <div className="space-y-0.5 pr-4">
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">EcoLoop Assistant</h4>
-              <p className="text-[11px] font-semibold text-zinc-800 dark:text-zinc-200 leading-relaxed">
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">EcoLoop Assistant</h4>
+              <p className="text-[11px] font-semibold text-foreground leading-relaxed">
                 {currentStep.message}
               </p>
             </div>
@@ -82,13 +84,14 @@ export default function NextStepAssistant() {
           <Button 
             size="sm"
             onClick={() => router.push(currentStep.route)}
-            className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold text-[10px] h-7 flex items-center justify-center gap-1 shadow-sm"
+            className="w-full text-[10px] h-7"
           >
             <Sparkles className="h-3 w-3 fill-current" />
             {currentStep.actionLabel}
             <ArrowRight className="h-3 w-3" />
           </Button>
         </CardContent>
+
       </Card>
     </div>
   );

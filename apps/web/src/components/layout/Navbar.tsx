@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
-import { cn } from "@/lib/utils";
 import { Play, Pause, Cpu, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,29 +9,22 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { 
-    simState, 
-    triggerLiveOptimization, 
-    optimizationLoading, 
-    startSimulation, 
-    setSimStatus 
+  const {
+    simState,
+    triggerLiveOptimization,
+    optimizationLoading,
+    startSimulation,
+    setSimStatus,
   } = useAppStore();
 
-  // Determine current page name
   const pageTitle = (() => {
     switch (pathname) {
-      case "/":
-        return "Dashboard Overview";
-      case "/analytics":
-        return "Performance Analytics";
-      case "/simulation":
-        return "EnergyPlus Runtime Control";
-      case "/ai-decisions":
-        return "AI Decisions Timeline";
-      case "/settings":
-        return "System Settings";
-      default:
-        return "EcoLoop Building Agents";
+      case "/":           return "Dashboard Overview";
+      case "/analytics":  return "Performance Analytics";
+      case "/simulation": return "EnergyPlus Runtime Control";
+      case "/ai-decisions": return "AI Decisions Timeline";
+      case "/settings":   return "System Settings";
+      default:            return "EcoLoop Building Agents";
     }
   })();
 
@@ -40,81 +32,88 @@ export default function Navbar() {
   const runId = simState.runId;
 
   return (
-    <header className="h-16 border-b border-border bg-card flex items-center justify-between px-8 select-none flex-shrink-0">
-      {/* Title */}
-      <div className="flex items-center gap-2">
-        <SidebarTrigger className="h-8 w-8 text-zinc-500" />
-        <h1 className="font-semibold text-sm tracking-tight text-foreground">{pageTitle}</h1>
+    <header
+      className="flex-shrink-0 flex items-center justify-between px-6 select-none border-b border-border bg-background"
+      style={{ height: 64 }}
+    >
+      {/* Left: sidebar toggle + page title */}
+      <div className="flex items-center gap-3">
+        <SidebarTrigger
+          className="h-9 w-9 transition-colors flex items-center justify-center rounded-xl border border-zinc-200"
+          style={{ color: "#737373" }}
+          aria-label="Toggle navigation"
+        />
+        <h1
+          className="text-base font-semibold tracking-tight"
+          style={{ letterSpacing: "-0.015em", color: "#171717" }}
+        >
+          {pageTitle}
+        </h1>
       </div>
 
-
-      {/* Simulator Controls & Badges */}
+      {/* Right: simulator controls */}
       <div className="flex items-center gap-4">
-        {/* Simulator Status */}
-        <div className="flex items-center gap-2 mr-2">
-          <span className="text-[10px] font-bold text-zinc-400 font-mono uppercase tracking-widest">Simulator:</span>
-          <Badge 
-            variant="outline"
-            className={cn(
-              "font-mono uppercase text-[10px] px-2 py-0.5 rounded border font-semibold flex items-center gap-1",
-              simState.status === "running" && "text-emerald-600 border-emerald-500/20 bg-emerald-500/5",
-              simState.status === "paused" && "text-amber-600 border-amber-500/20 bg-amber-500/5",
-              simState.status === "idle" && "text-zinc-400 border-border bg-zinc-50",
-              simState.status === "error" && "text-rose-600 border-rose-500/20 bg-rose-500/5"
-            )}
+        {/* Status badge */}
+        <div className="flex items-center gap-2">
+          <span
+            className="text-[10px] font-extrabold font-mono uppercase tracking-widest"
+            style={{ color: "#a3a3a3" }}
+          >
+            Simulator
+          </span>
+          <Badge
+            className="font-extrabold uppercase text-[9px] px-2.5 py-1 border tracking-wider h-6 flex items-center"
+            style={{ borderColor: "#e5e5e5", backgroundColor: "#fafafa", color: "#737373" }}
           >
             {simState.status.toUpperCase()}
           </Badge>
         </div>
 
-        {/* Start / Pause Quick Action */}
-        <Button 
-          size="sm" 
-          variant="outline"
+        {/* Pause / Start */}
+        <Button
           onClick={() => {
             if (isRunning) {
               setSimStatus("paused");
             } else {
-              startSimulation(simState.currentModel || "Office Standard Run");
+              startSimulation(simState.currentModel || "Chicago Office Standard Simulation");
             }
           }}
-          className="h-8 text-xs font-semibold px-3 border-border hover:bg-zinc-50 text-zinc-700"
+          className="h-9 text-xs font-semibold px-4 flex items-center gap-2"
+          style={{ backgroundColor: "#ffffff", borderColor: "#e5e5e5", color: "#171717", border: "1px solid #e5e5e5" }}
         >
           {isRunning ? (
             <>
-              <Pause className="h-3.5 w-3.5" />
-              Pause Sim
+              <Pause className="h-4 w-4" aria-hidden />
+              Pause Simulation
             </>
           ) : (
             <>
-              <Play className="h-3.5 w-3.5 fill-current" />
-              Start Sim
+              <Play className="h-4 w-4 fill-current" aria-hidden />
+              Start Simulation
             </>
-          )
-          }
+          )}
         </Button>
 
-        {/* Force Optimize Trigger */}
-        <Button 
-          size="sm"
+        {/* Force Optimize */}
+        <Button
           onClick={() => triggerLiveOptimization(runId)}
           disabled={!runId || optimizationLoading}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-9 text-xs font-semibold px-4 flex items-center gap-2"
+          style={{ backgroundColor: "#171717", color: "#ffffff" }}
         >
           {optimizationLoading ? (
             <>
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              Optimizing...
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              Optimising…
             </>
           ) : (
             <>
-              <Cpu className="h-3.5 w-3.5" />
-              Force Optimize
+              <Cpu className="h-4 w-4" aria-hidden />
+              Optimise Now
             </>
           )}
         </Button>
       </div>
     </header>
-
   );
 }

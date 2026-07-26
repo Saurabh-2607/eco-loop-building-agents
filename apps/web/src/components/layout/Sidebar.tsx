@@ -4,12 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
 import { cn } from "@/lib/utils";
-import { 
-  LayoutDashboard, 
-  BarChart3, 
-  Play, 
-  Cpu, 
-  Settings 
+import {
+  LayoutDashboard,
+  BarChart3,
+  Play,
+  Cpu,
+  Settings,
+  Activity,
 } from "lucide-react";
 import {
   Sidebar,
@@ -20,75 +21,95 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarGroup,
-  SidebarGroupContent
+  SidebarGroupContent,
 } from "@/components/ui/sidebar";
-import { Card, CardContent } from "@/components/ui/card";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Analytics", href: "/analytics", icon: BarChart3 },
-  { name: "Simulation", href: "/simulation", icon: Play },
-  { name: "AI Decisions", href: "/ai-decisions", icon: Cpu },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Dashboard",    href: "/",             icon: LayoutDashboard },
+  { name: "Analytics",   href: "/analytics",    icon: BarChart3 },
+  { name: "Simulation",  href: "/simulation",   icon: Play },
+  { name: "AI Decisions",href: "/ai-decisions", icon: Cpu },
+  { name: "Settings",    href: "/settings",     icon: Settings },
 ];
+
+const STATUS_MAP: Record<string, { label: string; substep: string; pulse: boolean }> = {
+  initializing:         { label: "Loop Setup",      substep: "Booting engine threads",               pulse: false },
+  loading_model:        { label: "Model Load",       substep: "Parsing IDF geometry",                 pulse: false },
+  running_energyplus:   { label: "EnergyPlus",       substep: "Simulating HVAC thermal load",         pulse: true  },
+  collecting_telemetry: { label: "Telemetry",        substep: "Aggregating zone timeseries",          pulse: true  },
+  analyzing_data:       { label: "AI Analysis",      substep: "LangGraph isolating load leaks",       pulse: true  },
+  generating_ai_report: { label: "Report Gen",       substep: "Drafting audit report markdown",       pulse: true  },
+  applying_optimization:{ label: "Actuation",        substep: "Pushing setpoint changes",             pulse: true  },
+  completed:            { label: "Completed",        substep: "Comfort bounds verified",              pulse: false },
+  failed:               { label: "Pipeline Error",   substep: "System loop crash — check logs",      pulse: false },
+};
 
 export default function AppSidebar() {
   const pathname = usePathname();
   const { detailedStatus } = useAppStore();
 
-  const statusInfo = (() => {
-    switch (detailedStatus) {
-      case "initializing":
-        return { step: "Loop Setup", substep: "Booting engine threads", color: "bg-violet-500" };
-      case "loading_model":
-        return { step: "Model Load", substep: "Parsing Chicago Office Standard IDF", color: "bg-violet-500" };
-      case "running_energyplus":
-        return { step: "EnergyPlus Run", substep: "Simulating HVAC & lights thermal load", color: "bg-emerald-500 animate-pulse" };
-      case "collecting_telemetry":
-        return { step: "Sensing Telemetry", substep: "Aggregating timeseries zone values", color: "bg-emerald-500 animate-pulse" };
-      case "analyzing_data":
-        return { step: "AI Analysis", substep: "LangGraph isolating utility load leaks", color: "bg-indigo-500 animate-pulse" };
-      case "generating_ai_report":
-        return { step: "Report Gen", substep: "Ollama drafting audit report markdown", color: "bg-indigo-500 animate-pulse" };
-      case "applying_optimization":
-        return { step: "Actuation Update", substep: "Pushing target setpoint changes", color: "bg-sky-500 animate-pulse" };
-      case "completed":
-        return { step: "System Completed", substep: "Comfort bounds verified", color: "bg-emerald-500" };
-      case "failed":
-        return { step: "Pipeline Error", substep: "System loop crash", color: "bg-rose-500" };
-      default:
-        return { step: "System Idle", substep: "Awaiting simulation request", color: "bg-zinc-500" };
-    }
-  })();
+  const status = STATUS_MAP[detailedStatus] ?? {
+    label: "Idle",
+    substep: "Awaiting simulation request",
+    pulse: false,
+  };
 
   return (
-    <Sidebar>
-      {/* Brand Header */}
-      <SidebarHeader className="h-16 flex flex-row items-center gap-3 px-6 border-b flex-shrink-0">
-        <div className="text-foreground text-base font-bold flex-shrink-0">
-          ▲
-        </div>
-        <div>
-          <span className="font-bold text-foreground text-sm tracking-tight block">EcoLoop</span>
-          <span className="text-muted-foreground text-[10px] font-bold font-mono tracking-wider block -mt-1">BUILDING AGENT</span>
+    <Sidebar className="border-r border-neutral-200 bg-white">
+      {/* ── Brand header ─────────────────────────────────────── */}
+      <SidebarHeader className="px-5 border-b border-neutral-200 bg-white" style={{ height: 59, borderRadius: 0 }}>
+        <div className="flex items-center gap-3 h-full">
+          {/* Wordmark triangle */}
+          <div
+            className="flex items-center justify-center bg-neutral-900 text-white select-none flex-shrink-0"
+            style={{ width: 30, height: 30, borderRadius: 8, fontSize: 13, fontWeight: 700, lineHeight: 1 }}
+            aria-hidden
+          >
+            ▲
+          </div>
+
+          {/* Text lockup */}
+          <div className="flex flex-col justify-center min-w-0">
+            <span
+              className="font-semibold leading-none"
+              style={{ fontSize: 14, letterSpacing: "-0.02em", color: "#171717" }}
+            >
+              EcoLoop
+            </span>
+            <span
+              className="font-mono font-medium uppercase leading-none mt-1"
+              style={{ fontSize: 10, letterSpacing: "0.08em", color: "#a3a3a3" }}
+            >
+              Building Agent
+            </span>
+          </div>
         </div>
       </SidebarHeader>
 
-      {/* Navigation Content */}
-      <SidebarContent className="px-2 py-4">
+      {/* ── Navigation ───────────────────────────────────────── */}
+      <SidebarContent className="px-3 py-3 bg-white">
         <SidebarGroup className="p-0">
           <SidebarGroupContent>
-            <SidebarMenu className="gap-1">
+            <SidebarMenu className="gap-0.5">
               {navigation.map((item) => {
                 const isActive = pathname === item.href;
                 return (
                   <SidebarMenuItem key={item.name}>
-                    <SidebarMenuButton 
+                    <SidebarMenuButton
                       render={<Link href={item.href} />}
                       isActive={isActive}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors cursor-pointer w-full overflow-visible rounded-xl",
+                        isActive ? "bg-neutral-100" : "hover:bg-neutral-50"
+                      )}
+                      style={{ color: isActive ? "#171717" : "#737373" }}
                     >
-                      <item.icon className="flex-shrink-0" />
-                      <span>{item.name}</span>
+                      <item.icon
+                        className="h-4 w-4 flex-shrink-0"
+                        style={{ color: isActive ? "#171717" : "#a3a3a3" }}
+                        aria-hidden
+                      />
+                      <span className="truncate">{item.name}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
@@ -98,20 +119,38 @@ export default function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      {/* Footer Info: Step and Substep Tracker using standard Card */}
-      <SidebarFooter className="p-4 border-t">
-        <Card className="bg-muted/40 shadow-none border-0">
-          <CardContent className="p-3 space-y-2 text-left">
-            <div className="flex items-center gap-2">
-              <span className={cn("h-2 w-2 rounded-full", statusInfo.color)} />
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest font-mono">Active Step</span>
-            </div>
-            <div className="space-y-0.5">
-              <div className="text-xs font-bold text-foreground tracking-tight">{statusInfo.step}</div>
-              <div className="text-[10px] leading-relaxed text-muted-foreground font-medium">{statusInfo.substep}</div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* ── Footer: active step tracker ──────────────────────── */}
+      <SidebarFooter className="px-4 py-4 border-t border-neutral-200 bg-white" style={{ borderRadius: 0 }}>
+        {/* Section label row */}
+        <div className="flex items-center gap-2 mb-2">
+          <Activity
+            className={cn("h-3 w-3 flex-shrink-0", status.pulse && "animate-pulse")}
+            style={{ color: "#a3a3a3" }}
+            aria-hidden
+          />
+          <span
+            className="font-mono font-bold uppercase"
+            style={{ fontSize: 9, letterSpacing: "0.1em", color: "#a3a3a3" }}
+          >
+            Active Step
+          </span>
+        </div>
+
+        {/* Step content */}
+        <div className="space-y-0.5 pl-5">
+          <p
+            className="font-semibold leading-tight"
+            style={{ fontSize: 12, letterSpacing: "-0.01em", color: "#171717" }}
+          >
+            {status.label}
+          </p>
+          <p
+            className="leading-relaxed"
+            style={{ fontSize: 11, color: "#737373" }}
+          >
+            {status.substep}
+          </p>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );

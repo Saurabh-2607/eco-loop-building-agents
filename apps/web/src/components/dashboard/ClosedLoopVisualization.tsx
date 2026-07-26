@@ -8,11 +8,11 @@ import { cn } from "@/lib/utils";
 import InfoTooltip from "@/components/dashboard/InfoTooltip";
 
 const STAGES = [
-  { id: "OBSERVE", name: "Observation", desc: "Sensor data collection (temp, humidity, power)", icon: Eye },
-  { id: "ANALYZE", name: "Analysis",    desc: "Extracting building envelope parameters",   icon: Sliders },
-  { id: "DECIDE",  name: "Decision",    desc: "Ollama Qwen3:8B reasoning & recommendations",     icon: Cpu },
-  { id: "ACTUATE", name: "Actuation",   desc: "Submitting overrides to EnergyPlus simulator", icon: PlayCircle },
-  { id: "FEEDBACK", name: "Feedback",   desc: "Evaluating operator feedback and compliance", icon: CheckCircle2 },
+  { id: "RUNNING", name: "Simulation Running", desc: "EnergyPlus digital twin running continuously", icon: PlayCircle },
+  { id: "COLLECTED", name: "Data Collected", desc: "Hourly metrics committed to telemetry database", icon: Eye },
+  { id: "ANALYSIS", name: "AI Analysis", desc: "LangGraph reasoning over load variance & comfort", icon: Cpu },
+  { id: "OPTIMIZATION", name: "Applying Optimization", desc: "Setpoint adjustments actuated in config", icon: Sliders },
+  { id: "VERIFICATION", name: "Verification", desc: "Evaluating occupant comfort & energy savings", icon: CheckCircle2 },
 ];
 
 export default function ClosedLoopVisualization() {
@@ -23,7 +23,7 @@ export default function ClosedLoopVisualization() {
     if (detailedStatus === "running_energyplus") return 1;
     if (detailedStatus === "analyzing_data") return 2;
     if (detailedStatus === "applying_optimization") return 3;
-    if (simState.status === "finished") return 4;
+    if (detailedStatus === "completed" || simState.status === "finished") return 4;
     return 0;
   })();
 
@@ -34,7 +34,7 @@ export default function ClosedLoopVisualization() {
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <RefreshCw className="h-4.5 w-4.5 text-neutral-500 animate-spin" style={{ animationDuration: "8s" }} />
             Autonomous Closed-Loop Pipeline
-            <InfoTooltip content="Shows the live status of the automation cycle: Observes telemetry → Analyzes building thermal response → Decides temperature adjust → Actuates setpoint overrides." />
+            <InfoTooltip content="Shows the live status of the automation cycle: digital twin execution, hourly database polling, AI LangGraph auditing, actuating overrides, and verifying saving margins." />
           </CardTitle>
           <CardDescription>Real-time execution path of the building optimization network</CardDescription>
         </div>

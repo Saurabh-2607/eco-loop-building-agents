@@ -11,7 +11,8 @@ from app.core.logging import setup_logging
 from app.core.custom_exceptions import EcoLoopException
 from app.api.v1.router import api_router
 from app.core.pubsub import pubsub_broker
-from app.workers.optimization_agent import run_realtime_ai_agent
+from app.workers.data_collector import run_data_collector
+from app.workers.optimization_worker import run_optimization_worker
 from app.websocket.manager import WebSocketManager
 from app.api.dependencies import get_websocket_manager
 
@@ -113,23 +114,34 @@ async def global_exception_handler(request: Request, exc: Exception):
         }
     )
 
-# Task reference tracking for AI agent and simulation loops
-bg_ai_agent_task = None
+# Task reference tracking for background workers
+bg_data_collector_task = None
+bg_optimization_task = None
 
 @app.on_event("startup")
 async def startup_event():
-    global bg_ai_agent_task
+    global bg_data_collector_task, bg_optimization_task
     logger.info("EcoLoop API application started.")
-    # Spawn the background real-time AI Agent listener task
-    bg_ai_agent_task = asyncio.create_task(run_realtime_ai_agent())
+    
+    # Spawn continuous background tasks
+    bg_data_collector_task = asyncio.create_task(run_data_collector())
+    bg_optimization_task = asyncio.create_task(run_optimization_worker())
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    global bg_ai_agent_task
+    global bg_data_collector_task, bg_optimization_task
     logger.info("EcoLoop API application shutting down.")
-    if bg_ai_agent_task:
-        bg_ai_agent_task.cancel()
+    
+    if bg_data_collector_task:
+        bg_data_collector_task.cancel()
         try:
-            await bg_ai_agent_task
+            await bg_data_collector_task
+        except asyncio.CancelledError:
+            pass
+            
+    if bg_optimization_task:
+        bg_optimization_task.cancel()
+        try:
+            await bg_optimization_task
         except asyncio.CancelledError:
             pass

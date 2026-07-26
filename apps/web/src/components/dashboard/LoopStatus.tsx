@@ -7,7 +7,7 @@ import { Clock, Check, RefreshCw } from "lucide-react";
 import InfoTooltip from "@/components/dashboard/InfoTooltip";
 
 export default function LoopStatus() {
-  const { simState, detailedStatus, decisions } = useAppStore();
+  const { simState, detailedStatus } = useAppStore();
 
   const getStageStatus = (stage: string) => {
     switch (stage) {
@@ -47,19 +47,12 @@ export default function LoopStatus() {
         }
         return { label: "Ready to schedule", variant: "ready" };
 
-      case "LEARN":
-        const hasFeedback = decisions.some(d => d.feedbackStatus !== "unrated");
-        if (hasFeedback) {
-          return { label: "Model policies calibrated", variant: "success" };
-        }
-        return { label: "Waiting for operator ratings", variant: "waiting" };
-
       default:
         return { label: "Awaiting sequence boot", variant: "pending" };
     }
   };
 
-  const stages = ["OBSERVE", "ANALYZE", "DECIDE", "ACT", "LEARN"];
+  const stages = ["OBSERVE", "ANALYZE", "DECIDE", "ACT"];
 
   return (
     <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm overflow-hidden h-full flex flex-col">

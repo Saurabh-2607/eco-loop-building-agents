@@ -47,6 +47,7 @@ interface AppStore {
   fetchHistoricalMetrics: (simId: string) => Promise<void>;
   triggerLiveOptimization: (simId?: string) => Promise<void>;
   triggerAILangGraphAnalysis: (simId: string) => Promise<void>;
+  triggerManualOptimization: () => Promise<void>;
   fetchAIDecisions: (simId: string) => Promise<void>;
   triggerMockOptimization: () => void;
 }
@@ -380,6 +381,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
             get().fetchAIDecisions(runId);
           }
         } 
+        else if (eventName === "AI_LOG") {
+          get().addLog({
+            timestamp: new Date().toLocaleTimeString(),
+            level: "INFO",
+            service: "agent",
+            message: payload.data?.message || "Executing LangGraph agent nodes..."
+          });
+        }
         else if (eventName === "SIMULATION_ERROR") {
           set((state) => ({
             simState: {
@@ -778,6 +787,53 @@ export const useAppStore = create<AppStore>((set, get) => ({
         level: "ERROR",
         service: "agent",
         message: `LangGraph agent execution failed: ${err.message}`
+      });
+    }
+  },
+
+  triggerManualOptimization: async () => {
+    try {
+      set({ aiReportLoading: true });
+      get().addLog({
+        timestamp: new Date().toLocaleTimeString(),
+        level: "INFO",
+        service: "agent",
+        message: "Manually triggering immediate AI Optimization cycle..."
+      });
+
+      const res = await fetch(`${API_URL}/api/v1/ai/optimize_now`, {
+        method: "POST"
+      });
+      const payload = await res.json();
+      if (payload.success && payload.data) {
+        set({
+          aiReport: payload.data.reasoning,
+          aiReportLoading: false
+        });
+        get().addLog({
+          timestamp: new Date().toLocaleTimeString(),
+          level: "INFO",
+          service: "agent",
+          message: "Manual AI Optimization cycle completed successfully."
+        });
+        
+        // Fetch updated decisions
+        const runId = get().simState.runId;
+        if (runId) {
+          await get().fetchAIDecisions(runId);
+        }
+      } else {
+        throw new Error(payload.detail || "Agent workflow crash");
+      }
+    } catch (e) {
+      const err = e as Error;
+      console.error(err);
+      set({ aiReportLoading: false });
+      get().addLog({
+        timestamp: new Date().toLocaleTimeString(),
+        level: "ERROR",
+        service: "agent",
+        message: `Manual optimization trigger failed: ${err.message}`
       });
     }
   },

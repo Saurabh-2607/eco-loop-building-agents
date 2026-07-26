@@ -46,8 +46,9 @@ class SimulationService:
             sim = Simulation(simulation_name=name, status="running")
             created_sim = await self.repository.create(sim)
             
-            # Spawn background execution thread task
-            asyncio.create_task(self._run_simulation_in_background(created_sim.id))
+            # Spawn real-time simulation background task
+            from app.workers.simulation_worker import simulation_worker
+            simulation_worker.start_simulation_task(created_sim.id, name)
             
             return created_sim
         except Exception as e:

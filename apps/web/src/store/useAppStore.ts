@@ -255,75 +255,145 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     socket.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data);
+        const payload = JSON.parse(event.data);
+        const eventName = payload.event;
+        const runId = payload.run_id;
 
-        if (data.event === "SIMULATION_STEP") {
-          const payload = data.payload;
-          const comfort = calculatePmvPpd(payload.indoor_temp || 22.0);
-          const currentHour = get().metrics.length + 1;
-          const formattedHour = String(currentHour).padStart(2, "0") + ":00";
-          const metric: SimulationMetric = {
-            timestamp: formattedHour,
-            indoorTemp: payload.indoor_temp || 22.0,
-            outdoorTemp: payload.outdoor_temp || 28.5,
-            relativeHumidity: payload.humidity || 48.0,
-            occupancyCount: payload.occupancy || 0,
-            pmv: comfort.pmv,
-            ppd: comfort.ppd,
-            hvacPower: payload.hvac_power_kw || 0.0,
-            lightingPower: payload.lighting_power_kw || 0.0
-          };
-          set({ detailedStatus: "collecting_telemetry" });
-          get().addMetricPoint(metric);
-        } else if (data.event === "SIMULATION_PROGRESS") {
-          const payload = data.payload;
-          set((state) => {
-            let detStatus = state.detailedStatus;
-            if (payload.status === "running") {
-              detStatus = payload.progress >= 90 ? "collecting_telemetry" : "running_energyplus";
-            } else if (payload.status === "parsing") {
-              detStatus = "analyzing_data";
-            }
-            return {
-              simState: {
-                ...state.simState,
-                status: payload.status || state.simState.status,
-                elapsedSeconds: state.simState.elapsedSeconds + 1
-              },
-              detailedStatus: detStatus
-            };
-          });
-          get().addLog({
-            timestamp: new Date().toLocaleTimeString(),
-            level: "INFO",
-            service: "simulator",
-            message: `Simulation execution progress: ${payload.progress}% (${payload.status})`
-          });
-        } else if (data.event === "SIMULATION_COMPLETE") {
+        if (eventName === "SIMULATION_STARTED") {
           set((state) => ({
             simState: {
               ...state.simState,
-              status: "finished"
+              runId: runId,
+              status: "running",
+              currentModel: payload.name || state.simState.currentModel,
+              elapsedSeconds: 0
             },
-            detailedStatus: "analyzing_data"
+            detailedStatus: "running_energyplus",
+            metrics: [],
+            decisions: [],
+            aiReport: ""
           }));
           get().addLog({
             timestamp: new Date().toLocaleTimeString(),
             level: "INFO",
             service: "simulator",
-            message: "Simulation finished successfully. Querying parsed SQL metrics..."
+            message: `Simulation "${payload.name}" started in real-time.`
           });
-          // Fetch final database metrics
-          const runId = get().simState.runId;
-          if (runId) {
-            get().fetchHistoricalMetrics(runId);
-            get().triggerLiveOptimization(runId);
-          }
+        } 
+        else if (eventName === "ENERGY_UPDATE") {
+          const stepData = payload.data;
+          const comfort = calculatePmvPpd(stepData.indoor_temp || 22.0);
+          
+          const metric: SimulationMetric = {
+            timestamp: stepData.timestamp,
+            indoorTemp: stepData.indoor_temp,
+            outdoorTemp: stepData.outdoor_temp || 28.5,
+            relativeHumidity: stepData.humidity || 48.0,
+            occupancyCount: stepData.occupancy || 0,
+            pmv: comfort.pmv,
+            ppd: comfort.ppd,
+            hvacPower: stepData.hvac_power || 0.0,
+            lightingPower: stepData.lighting_power || 0.0
+          };
 
-          // Continuous loop: Auto-restart simulation after 4 seconds
-          setTimeout(() => {
-            get().startSimulation(get().simState.currentModel || "Chicago Office Standard Simulation");
-          }, 4000);
+          set((state) => {
+            const updatedMetrics = [...state.metrics, metric].slice(-24);
+            return {
+              metrics: updatedMetrics,
+              detailedStatus: "running_energyplus",
+              simState: {
+                ...state.simState,
+                status: "running",
+                runId: runId
+              },
+              summary: {
+                energy: Math.round(stepData.energy),
+                temperature: parseFloat(stepData.indoor_temp.toFixed(1)),
+                occupancy: stepData.occupancy,
+                savings: state.summary.savings
+              }
+            };
+          });
+
+          get().addLog({
+            timestamp: new Date().toLocaleTimeString(),
+            level: "INFO",
+            service: "simulator",
+            message: `Step ${stepData.step}/${stepData.total_steps} telemetry: Energy = ${stepData.energy} kW, Temp = ${stepData.indoor_temp}°C`
+          });
+        } 
+        else if (eventName === "AI_ANALYSIS_STARTED") {
+          set({ detailedStatus: "analyzing_data" });
+          get().addLog({
+            timestamp: new Date().toLocaleTimeString(),
+            level: "INFO",
+            service: "agent",
+            message: payload.data?.message || "Analyzing building parameters..."
+          });
+        } 
+        else if (eventName === "AI_RECOMMENDATION") {
+          const recData = payload.data;
+          const newDecision: AgentDecision = {
+            id: `dec-${recData.step}-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            hvacSetpoint: recData.hvac_setpoint,
+            lightingDim: recData.lighting_dim,
+            reason: recData.reason,
+            modelName: "Ollama Qwen3:8B",
+            tokensConsumed: 480,
+            feedbackStatus: "unrated"
+          };
+
+          set((state) => ({
+            decisions: [newDecision, ...state.decisions].slice(0, 30),
+            detailedStatus: "applying_optimization",
+            summary: {
+              ...state.summary,
+              savings: recData.savings
+            }
+          }));
+
+          get().addLog({
+            timestamp: new Date().toLocaleTimeString(),
+            level: "WARNING",
+            service: "agent",
+            message: `AI recommendation: Setpoint Comfort target = ${recData.hvac_setpoint}°C (Savings: ${recData.savings}%)`
+          });
+        } 
+        else if (eventName === "SIMULATION_COMPLETE") {
+          set((state) => ({
+            simState: {
+              ...state.simState,
+              status: "finished"
+            },
+            detailedStatus: "completed"
+          }));
+
+          get().addLog({
+            timestamp: new Date().toLocaleTimeString(),
+            level: "INFO",
+            service: "simulator",
+            message: "Simulation completed successfully. Optimization overrides finalized."
+          });
+
+          if (runId) {
+            get().fetchAIDecisions(runId);
+          }
+        } 
+        else if (eventName === "SIMULATION_ERROR") {
+          set((state) => ({
+            simState: {
+              ...state.simState,
+              status: "error"
+            },
+            detailedStatus: "failed"
+          }));
+          get().addLog({
+            timestamp: new Date().toLocaleTimeString(),
+            level: "ERROR",
+            service: "simulator",
+            message: `Simulation crashed: ${payload.error}`
+          });
         }
       } catch (err) {
         console.error("Error parsing WS packet:", err);

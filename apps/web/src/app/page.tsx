@@ -3,6 +3,8 @@
 import { useAppStore } from "@/store/useAppStore";
 import MetricCard from "@/components/dashboard/MetricCard";
 import EnergyChart from "@/components/dashboard/EnergyChart";
+import HVACLoadChart from "@/components/dashboard/HVACLoadChart";
+import LightingUsageChart from "@/components/dashboard/LightingUsageChart";
 import TemperatureChart from "@/components/dashboard/TemperatureChart";
 import OccupancyChart from "@/components/dashboard/OccupancyChart";
 import AgentActivityFeed from "@/components/dashboard/AgentActivityFeed";
@@ -37,7 +39,7 @@ export default function Dashboard() {
         </div>
 
         {/* Center: 2x2 grid of compact KPI cards (col-span-3) */}
-        <div className="lg:col-span-4 grid grid-cols-2 gap-3">
+        <div className="lg:col-span-3 grid grid-cols-2 gap-3">
           <MetricCard
             title="Energy Demand"
             value={hasEnergy ? summary.energy! : "—"}
@@ -68,14 +70,16 @@ export default function Dashboard() {
         </div>
 
         {/* Right: Active AI Optimization Decision (col-span-5) */}
-        <div className="lg:col-span-4 flex flex-col">
+        <div className="lg:col-span-5 flex flex-col">
           <AIReasoningCard />
         </div>
       </div>
 
-      {/* ── Row 2: Energy & Temperature Charts ──────────────── */}
-      <div className="grid grid-cols-2 gap-4 animate-fade-up stagger-2">
+      {/* ── Row 2: Live Timelines Grid (4 Charts) ──────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-up stagger-2">
         <EnergyChart />
+        <HVACLoadChart />
+        <LightingUsageChart />
         <TemperatureChart />
       </div>
 

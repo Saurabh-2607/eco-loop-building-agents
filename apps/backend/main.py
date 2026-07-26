@@ -1,14 +1,19 @@
 import asyncio
-from fastapi import FastAPI, Request, status
+import json
+from fastapi import FastAPI, Request, status, WebSocket, WebSocketDisconnect, Depends
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
+from uuid import uuid4
 
 from app.core.config import settings
 from app.core.logging import setup_logging
 from app.core.custom_exceptions import EcoLoopException
 from app.api.v1.router import api_router
-from app.utils.background_tasks import broadcast_dummy_telemetry_loop
+from app.core.pubsub import pubsub_broker
+from app.workers.optimization_agent import run_realtime_ai_agent
+from app.websocket.manager import WebSocketManager
+from app.api.dependencies import get_websocket_manager
 
 # Initialize Loguru Sinks
 setup_logging()
@@ -32,11 +37,6 @@ app.add_middleware(
 # Include versioned API router under prefix /api/v1
 app.include_router(api_router, prefix="/api/v1")
 
-from fastapi import WebSocket, WebSocketDisconnect, Depends
-from uuid import uuid4
-from app.websocket.manager import WebSocketManager
-from app.api.dependencies import get_websocket_manager
-
 
 @app.websocket("/ws/live")
 async def websocket_endpoint(
@@ -53,11 +53,31 @@ async def websocket_endpoint(
         "client_id": client_id
     })
 
+    # Task to forward all published Pub/Sub events down the WebSocket to this client
+    async def event_forwarder():
+        try:
+            async for raw_message in pubsub_broker.subscribe("building:events"):
+                try:
+                    payload = json.loads(raw_message)
+                    await websocket.send_json(payload)
+                except Exception as ex:
+                    logger.error(f"Error forwarding pubsub event to WS client: {ex}")
+        except asyncio.CancelledError:
+            pass
+
+    forwarder_task = asyncio.create_task(event_forwarder())
+
     try:
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+    finally:
+        forwarder_task.cancel()
+        try:
+            await forwarder_task
+        except asyncio.CancelledError:
+            pass
 
 @app.get("/")
 def root():
@@ -93,22 +113,23 @@ async def global_exception_handler(request: Request, exc: Exception):
         }
     )
 
-# Task reference tracking
-bg_broadcast_task = None
+# Task reference tracking for AI agent and simulation loops
+bg_ai_agent_task = None
 
 @app.on_event("startup")
 async def startup_event():
-    global bg_broadcast_task
+    global bg_ai_agent_task
     logger.info("EcoLoop API application started.")
-    bg_broadcast_task = asyncio.create_task(broadcast_dummy_telemetry_loop())
+    # Spawn the background real-time AI Agent listener task
+    bg_ai_agent_task = asyncio.create_task(run_realtime_ai_agent())
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    global bg_broadcast_task
+    global bg_ai_agent_task
     logger.info("EcoLoop API application shutting down.")
-    if bg_broadcast_task:
-        bg_broadcast_task.cancel()
+    if bg_ai_agent_task:
+        bg_ai_agent_task.cancel()
         try:
-            await bg_broadcast_task
+            await bg_ai_agent_task
         except asyncio.CancelledError:
             pass

@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
+import InfoTooltip from "@/components/dashboard/InfoTooltip";
 
 interface MetricCardProps {
   title: string;
@@ -10,6 +11,13 @@ interface MetricCardProps {
   loading?: boolean;
 }
 
+const TOOLTIP_MAP: Record<string, string> = {
+  "Energy Demand": "Sum of total real-time electrical loads (HVAC and lighting) active in the building zone.",
+  "Indoor Temperature": "Mean dry-bulb temperature measured inside the zone. Optimal comfort range is 21.0°C - 23.5°C.",
+  "Building Occupancy": "Simulated live count of active building occupants inside the monitored office zone.",
+  "Carbon & Cost Savings": "Calculated optimization efficiency yield compared against baseline ASHRAE schedules."
+};
+
 export default function MetricCard({
   title,
   value,
@@ -18,6 +26,7 @@ export default function MetricCard({
   loading = false,
 }: MetricCardProps) {
   const isPlaceholder = typeof value === "string" && (value === "—" || value.includes("No"));
+  const tooltipText = TOOLTIP_MAP[title] || "Operational telemetry parameter.";
 
   return (
     <Card
@@ -40,8 +49,8 @@ export default function MetricCard({
           justifyContent: "space-between",
         }}
       >
-        {/* Top: Title */}
-        <div>
+        {/* Top: Title with Helper Tooltip */}
+        <div className="flex items-center justify-between gap-1.5 w-full">
           <p
             style={{
               fontSize: 14,
@@ -53,6 +62,7 @@ export default function MetricCard({
           >
             {title}
           </p>
+          <InfoTooltip content={tooltipText} />
         </div>
 
         {/* Bottom: Value & Change rate */}

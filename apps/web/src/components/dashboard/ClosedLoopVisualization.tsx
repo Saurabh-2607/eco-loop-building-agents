@@ -5,23 +5,25 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, PlayCircle, Cpu, Eye, Check, Sliders, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import InfoTooltip from "@/components/dashboard/InfoTooltip";
 
 const STAGES = [
   { id: "OBSERVE", name: "Observation", desc: "Sensor data collection (temp, humidity, power)", icon: Eye },
   { id: "ANALYZE", name: "Analysis",    desc: "Extracting building envelope parameters",   icon: Sliders },
-  { id: "DECIDE",  name: "Decision",    desc: "LangGraph reasoning & recommendations",     icon: Cpu },
+  { id: "DECIDE",  name: "Decision",    desc: "Ollama Qwen3:8B reasoning & recommendations",     icon: Cpu },
   { id: "ACTUATE", name: "Actuation",   desc: "Submitting overrides to EnergyPlus simulator", icon: PlayCircle },
   { id: "FEEDBACK", name: "Feedback",   desc: "Evaluating operator feedback and compliance", icon: CheckCircle2 },
 ];
 
 export default function ClosedLoopVisualization() {
-  const { simState, aiReport, wsConnected } = useAppStore();
+  const { simState, detailedStatus, wsConnected } = useAppStore();
 
   const activeIndex = (() => {
-    if (simState.status === "running")  return 3;
-    if (simState.status === "paused")   return 1;
-    if (simState.status === "error")    return 0;
-    if (simState.status === "finished") return aiReport ? 4 : 2;
+    if (detailedStatus === "initializing" || detailedStatus === "loading_model") return 0;
+    if (detailedStatus === "running_energyplus") return 1;
+    if (detailedStatus === "analyzing_data") return 2;
+    if (detailedStatus === "applying_optimization") return 3;
+    if (simState.status === "finished") return 4;
     return 0;
   })();
 
@@ -32,12 +34,13 @@ export default function ClosedLoopVisualization() {
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <RefreshCw className="h-4.5 w-4.5 text-neutral-500 animate-spin" style={{ animationDuration: "8s" }} />
             Autonomous Closed-Loop Pipeline
+            <InfoTooltip content="Shows the live status of the automation cycle: Observes telemetry → Analyzes building thermal response → Decides temperature adjust → Actuates setpoint overrides." />
           </CardTitle>
           <CardDescription>Real-time execution path of the building optimization network</CardDescription>
         </div>
         <span style={{
           fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-          color: wsConnected ? "#525252" : "#a3a3a3",
+          color: wsConnected ? "#171717" : "#a3a3a3",
           padding: "4px 10px", borderRadius: 6,
           border: "1px solid #e5e5e5", background: "#f5f5f5",
         }}>

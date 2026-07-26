@@ -1,16 +1,16 @@
 "use client";
 
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useAppStore } from "@/store/useAppStore";
-import { Users, Loader2 } from "lucide-react";
+import { Thermometer, Loader2 } from "lucide-react";
 
-export default function OccupancyChart() {
+export default function HVACLoadChart() {
   const { metrics, simLoading } = useAppStore();
 
   const chartData = metrics.map((m) => ({
     time: m.timestamp,
-    Occupants: m.occupancyCount,
+    HVAC: m.hvacPower,
   }));
 
   if (simLoading) {
@@ -18,10 +18,10 @@ export default function OccupancyChart() {
       <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm h-full flex flex-col">
         <CardHeader className="pb-4 flex-shrink-0">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <Users className="h-4.5 w-4.5 text-indigo-500" />
-            Occupancy Statistics
+            <Thermometer className="h-4.5 w-4.5 text-emerald-500" />
+            HVAC Load Graph
           </CardTitle>
-          <CardDescription>Zone occupancy density tracker</CardDescription>
+          <CardDescription>Real-time mechanical cooling electrical demand</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 flex items-center justify-center p-4">
           <div className="h-60 w-full flex flex-col items-center justify-center border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl text-center bg-zinc-50/20 dark:bg-zinc-950/20">
@@ -38,10 +38,10 @@ export default function OccupancyChart() {
       <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm h-full flex flex-col">
         <CardHeader className="pb-4 flex-shrink-0">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <Users className="h-4.5 w-4.5 text-indigo-500" />
-            Occupancy Statistics
+            <Thermometer className="h-4.5 w-4.5 text-emerald-500" />
+            HVAC Load Graph
           </CardTitle>
-          <CardDescription>Zone occupancy density tracker</CardDescription>
+          <CardDescription>Real-time mechanical cooling electrical demand</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 flex items-center justify-center p-4">
           <div className="h-60 w-full flex flex-col items-center justify-center border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl text-center text-zinc-400">
@@ -59,24 +59,28 @@ export default function OccupancyChart() {
       <CardHeader className="flex flex-row items-center justify-between pb-4 flex-shrink-0">
         <div>
           <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <Users className="h-4.5 w-4.5 text-indigo-500" />
-            Occupancy Statistics
+            <Thermometer className="h-4.5 w-4.5 text-emerald-500" />
+            HVAC Load Graph
           </CardTitle>
-          <CardDescription>Zone occupancy density tracker</CardDescription>
+          <CardDescription>Real-time mechanical cooling electrical demand</CardDescription>
         </div>
-        {metrics.length > 0 && (
-          <div className="text-xs font-bold text-neutral-800">
-            Current: {chartData[chartData.length - 1]?.Occupants} Persons
-          </div>
-        )}
+        <div className="text-xs font-bold text-neutral-800">
+          Last: {chartData[chartData.length - 1]?.HVAC} kW
+        </div>
       </CardHeader>
       <CardContent className="p-4 flex-1">
         <div className="h-60 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="hvacSoloGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-zinc-100 dark:text-zinc-900" />
               <XAxis dataKey="time" stroke="#71717a" fontSize={11} tickLine={false} axisLine={false} />
-              <YAxis stroke="#71717a" fontSize={11} tickLine={false} axisLine={false} />
+              <YAxis stroke="#71717a" fontSize={11} tickLine={false} axisLine={false} unit=" kW" />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "#171717",
@@ -86,10 +90,9 @@ export default function OccupancyChart() {
                   color: "#fff"
                 }}
                 labelStyle={{ fontWeight: "bold", color: "#a3a3a3" }}
-                cursor={{ fill: "rgba(99, 102, 241, 0.05)" }}
               />
-              <Bar dataKey="Occupants" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={40} />
-            </BarChart>
+              <Area type="monotone" dataKey="HVAC" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#hvacSoloGrad)" />
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       </CardContent>

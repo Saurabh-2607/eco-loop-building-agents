@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
 import BottomNavbar from "@/components/layout/BottomNavbar";
 import Navbar from "@/components/layout/Navbar";
+import SimulationLifecycleOverlay from "@/components/layout/SimulationLifecycleOverlay";
 import { cn } from "@/lib/utils";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -65,6 +66,9 @@ export default function RootLayout({
 
               {/* Centered Floating Bottom Navbar Dock */}
               <BottomNavbar />
+
+              {/* Cognitive Progress Simulation Loader Overlay */}
+              <SimulationLifecycleOverlay />
             </div>
           </div>
         </TooltipProvider>

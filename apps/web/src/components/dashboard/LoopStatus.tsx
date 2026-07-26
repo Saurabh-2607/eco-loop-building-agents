@@ -4,32 +4,36 @@ import { useAppStore } from "@/store/useAppStore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Check, RefreshCw } from "lucide-react";
+import InfoTooltip from "@/components/dashboard/InfoTooltip";
 
 export default function LoopStatus() {
-  const { simState, aiReport, decisions } = useAppStore();
+  const { simState, detailedStatus, decisions } = useAppStore();
 
   const getStageStatus = (stage: string) => {
     switch (stage) {
       case "OBSERVE":
-        if (simState.status === "running" || simState.status === "finished") {
-          return { label: "Energy data collected", variant: "success" };
+        if (detailedStatus === "initializing" || detailedStatus === "loading_model") {
+          return { label: "Awaiting sequence boot", variant: "pending" };
         }
-        return { label: "Waiting for telemetry", variant: "pending" };
+        return { label: "Energy data collected", variant: "success" };
 
       case "ANALYZE":
         if (simState.status === "finished") {
           return { label: "AI evaluated building performance", variant: "success" };
         }
-        if (simState.status === "running") {
+        if (detailedStatus === "running_energyplus") {
           return { label: "Evaluating comfort index", variant: "active" };
+        }
+        if (detailedStatus === "analyzing_data" || detailedStatus === "applying_optimization") {
+          return { label: "Telemetry parameters evaluated", variant: "success" };
         }
         return { label: "Awaiting run records", variant: "pending" };
 
       case "DECIDE":
-        if (simState.status === "finished") {
-          if (aiReport) {
-            return { label: "Optimization strategy generated", variant: "success" };
-          }
+        if (simState.status === "finished" || detailedStatus === "applying_optimization") {
+          return { label: "Optimization strategy generated", variant: "success" };
+        }
+        if (detailedStatus === "analyzing_data") {
           return { label: "Calculating schedule bounds", variant: "active" };
         }
         return { label: "Awaiting AI models boot", variant: "pending" };
@@ -38,7 +42,7 @@ export default function LoopStatus() {
         if (simState.status === "finished") {
           return { label: "Control parameters updated", variant: "success" };
         }
-        if (simState.status === "running") {
+        if (detailedStatus === "applying_optimization") {
           return { label: "Overriding actuators", variant: "active" };
         }
         return { label: "Ready to schedule", variant: "ready" };
@@ -48,7 +52,7 @@ export default function LoopStatus() {
         if (hasFeedback) {
           return { label: "Model policies calibrated", variant: "success" };
         }
-        return { label: "Waiting for next simulation", variant: "waiting" };
+        return { label: "Waiting for operator ratings", variant: "waiting" };
 
       default:
         return { label: "Awaiting sequence boot", variant: "pending" };
@@ -63,6 +67,7 @@ export default function LoopStatus() {
         <CardTitle className="text-base font-semibold flex items-center gap-2">
           <RefreshCw className="h-4.5 w-4.5 text-indigo-500 animate-spin" style={{ animationDuration: "8s" }} />
           EcoLoop Autonomous Loop
+          <InfoTooltip content="Traces control feedback status details. Observes active loads, analyzes thermal inertia, decides comfort setpoints, actuates overrides, and learns from user feedback." />
         </CardTitle>
         <CardDescription>Continuous feedback control loop parameters</CardDescription>
       </CardHeader>

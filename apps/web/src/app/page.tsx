@@ -17,7 +17,7 @@ import { useEffect } from "react";
 import { Zap, Thermometer, Users, TrendingUp } from "lucide-react";
 
 export default function Dashboard() {
-  const { summary, connectWebSocket, fetchLatestSimulation } = useAppStore();
+  const { summary, simLoading, connectWebSocket, fetchLatestSimulation } = useAppStore();
 
   useEffect(() => {
     connectWebSocket();
@@ -46,6 +46,7 @@ export default function Dashboard() {
           change={hasEnergy ? "-4.2%" : undefined}
           trend={hasEnergy ? "down" : undefined}
           icon={<Zap className="h-5 w-5 text-emerald-500 fill-current" />}
+          loading={simLoading}
         />
         <MetricCard
           title="Indoor Temperature"
@@ -54,6 +55,7 @@ export default function Dashboard() {
           change={hasTemp ? "+0.2°C" : undefined}
           trend={hasTemp ? "up" : undefined}
           icon={<Thermometer className="h-5 w-5 text-amber-500" />}
+          loading={simLoading}
         />
         <MetricCard
           title="Building Occupancy"
@@ -62,6 +64,7 @@ export default function Dashboard() {
           change={hasOcc ? "+5%" : undefined}
           trend={hasOcc ? "up" : undefined}
           icon={<Users className="h-5 w-5 text-indigo-500" />}
+          loading={simLoading}
         />
         <MetricCard
           title="Carbon & Cost Savings"
@@ -69,8 +72,10 @@ export default function Dashboard() {
           change={hasSavings ? "+1.5%" : undefined}
           trend={hasSavings ? "up" : undefined}
           icon={<TrendingUp className="h-5 w-5 text-sky-500" />}
+          loading={simLoading}
         />
       </div>
+
 
       {/* 2. Closed Loop Visualization */}
       <ClosedLoopVisualization />

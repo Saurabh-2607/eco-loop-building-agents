@@ -3,17 +3,39 @@
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useAppStore } from "@/store/useAppStore";
-import { Users } from "lucide-react";
+import { Users, Loader2 } from "lucide-react";
 
 export default function OccupancyChart() {
-  const { metrics } = useAppStore();
+  const { metrics, simLoading } = useAppStore();
 
   const chartData = metrics.map((m) => ({
     time: m.timestamp,
     Occupants: m.occupancyCount,
   }));
 
+  if (simLoading) {
+    return (
+      <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <Users className="h-4.5 w-4.5 text-indigo-500" />
+            Occupancy Statistics
+          </CardTitle>
+          <CardDescription>Zone occupancy density tracker</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-72 w-full flex flex-col items-center justify-center border border-dashed border-zinc-200 dark:border-zinc-800 rounded-lg p-6 text-center text-zinc-450 dark:text-zinc-500 animate-pulse bg-zinc-50/20 dark:bg-zinc-950/20">
+            <Loader2 className="h-8 w-8 mb-2 animate-spin text-zinc-350 dark:text-zinc-700" />
+            <p className="text-sm font-semibold text-zinc-500">Querying telemetry database...</p>
+            <p className="text-xs max-w-xs mt-1">Retrieving timeseries metrics from backend database.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (metrics.length === 0) {
+
     return (
       <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm">
         <CardHeader className="pb-4">

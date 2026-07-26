@@ -11,6 +11,7 @@ interface MetricCardProps {
   change?: string;
   trend?: "up" | "down" | "neutral";
   icon: ReactNode;
+  loading?: boolean;
 }
 
 export default function MetricCard({ 
@@ -19,7 +20,8 @@ export default function MetricCard({
   unit, 
   change, 
   trend = "neutral", 
-  icon 
+  icon,
+  loading = false
 }: MetricCardProps) {
   return (
     <Card className="overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm transition-all duration-200 hover:shadow-md">
@@ -35,35 +37,48 @@ export default function MetricCard({
         </div>
 
         <div className="mt-4 flex items-baseline gap-2">
-          {/* Main KPI Value */}
-          <span className={cn(
-            "font-bold tracking-tight text-zinc-950 dark:text-white",
-            typeof value === "string" && value.includes("No") ? "text-sm text-zinc-400 font-medium" : "text-3xl"
-          )}>
-            {value}
-          </span>
-          {unit && typeof value === "number" && (
-            <span className="text-sm font-semibold text-zinc-400 dark:text-zinc-500">
-              {unit}
-            </span>
+          {loading ? (
+            <div className="py-1">
+              <div className="h-8 w-24 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded-lg" />
+            </div>
+          ) : (
+            <>
+              {/* Main KPI Value */}
+              <span className={cn(
+                "font-bold tracking-tight text-zinc-950 dark:text-white",
+                typeof value === "string" && value.includes("No") ? "text-xs text-zinc-450 dark:text-zinc-500 font-medium" : "text-3xl"
+              )}>
+                {value}
+              </span>
+              {unit && typeof value === "number" && (
+                <span className="text-sm font-semibold text-zinc-400 dark:text-zinc-500">
+                  {unit}
+                </span>
+              )}
+            </>
           )}
         </div>
 
         {/* Change trends indications */}
-        {change && (
-          <div className="mt-3 flex items-center gap-1.5 text-xs font-semibold">
-            <span className={cn(
-              "px-2 py-0.5 rounded-md",
-              trend === "up" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-              trend === "down" && "bg-rose-500/10 text-rose-600 dark:text-rose-400",
-              trend === "neutral" && "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400"
-            )}>
-              {change}
-            </span>
-            <span className="text-zinc-400 dark:text-zinc-500">vs last hour</span>
-          </div>
+        {loading ? (
+          <div className="mt-3.5 h-4.5 w-16 bg-zinc-100 dark:bg-zinc-900/60 animate-pulse rounded-md" />
+        ) : (
+          change && (
+            <div className="mt-3 flex items-center gap-1.5 text-xs font-semibold">
+              <span className={cn(
+                "px-2 py-0.5 rounded-md",
+                trend === "up" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+                trend === "down" && "bg-rose-500/10 text-rose-600 dark:text-rose-400",
+                trend === "neutral" && "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400"
+              )}>
+                {change}
+              </span>
+              <span className="text-zinc-400 dark:text-zinc-500">vs last hour</span>
+            </div>
+          )
         )}
       </CardContent>
     </Card>
   );
 }
+

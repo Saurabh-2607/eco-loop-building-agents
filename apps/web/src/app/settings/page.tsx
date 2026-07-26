@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Cpu, ClipboardList, Info, BadgeAlert, CheckCircle2 } from "lucide-react";
+import { Cpu, Info, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function SettingsPage() {

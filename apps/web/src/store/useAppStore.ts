@@ -27,6 +27,7 @@ interface AppStore {
   aiReport: string;
   aiReportLoading: boolean;
   optimizationLoading: boolean;
+  simLoading: boolean;
   detailedStatus: "idle" | "initializing" | "loading_model" | "running_energyplus" | "collecting_telemetry" | "analyzing_data" | "generating_ai_report" | "applying_optimization" | "completed" | "failed";
   setDetailedStatus: (status: "idle" | "initializing" | "loading_model" | "running_energyplus" | "collecting_telemetry" | "analyzing_data" | "generating_ai_report" | "applying_optimization" | "completed" | "failed") => void;
 
@@ -79,6 +80,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   aiReport: "",
   aiReportLoading: false,
   optimizationLoading: false,
+  simLoading: false,
   detailedStatus: "idle",
   setDetailedStatus: (detailedStatus) => set({ detailedStatus }),
 
@@ -278,6 +280,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // Query latest run status
   fetchLatestSimulation: async () => {
     try {
+      set({ simLoading: true });
       const latestRes = await fetch(`${API_URL}/api/v1/simulation/latest`);
       const latest = await latestRes.json();
 
@@ -361,8 +364,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     } catch (e) {
       console.warn("Failed fetching latest simulation configuration:", e);
+    } finally {
+      set({ simLoading: false });
     }
   },
+
 
   // Trigger simulation starting REST API
   startSimulation: async (name: string) => {
@@ -468,6 +474,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // Fetch metrics history
   fetchHistoricalMetrics: async (simId: string) => {
     try {
+      set({ simLoading: true });
       const res = await fetch(`${API_URL}/api/v1/simulation/results/${simId}`);
       const payload = await res.json();
       if (payload.success && Array.isArray(payload.data)) {
@@ -488,7 +495,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           return {
             timestamp: `${hh}:${mm}`,
             indoorTemp: m.temperature,
-            outdoorTemp: 26.5, // Outdoor temperature stub fallback
+            outdoorTemp: 26.5,
             relativeHumidity: m.humidity,
             occupancyCount: m.occupancy,
             pmv: 0.0,
@@ -512,11 +519,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
           });
         }
       }
-
     } catch (e) {
       console.warn("Failed fetching historical metrics:", e);
+    } finally {
+      set({ simLoading: false });
     }
   },
+
 
   triggerMockOptimization: () => {
     set((state) => ({

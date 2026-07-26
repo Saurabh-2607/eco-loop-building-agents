@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAppStore } from "@/store/useAppStore";
 import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, 
@@ -22,6 +23,32 @@ const navigation = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { detailedStatus } = useAppStore();
+
+  const statusInfo = (() => {
+    switch (detailedStatus) {
+      case "initializing":
+        return { step: "Loop Setup", substep: "Booting engine threads", color: "bg-violet-500" };
+      case "loading_model":
+        return { step: "Model Load", substep: "Parsing Chicago Office Standard IDF", color: "bg-violet-500" };
+      case "running_energyplus":
+        return { step: "EnergyPlus Run", substep: "Simulating HVAC & lights thermal load", color: "bg-emerald-500 animate-pulse" };
+      case "collecting_telemetry":
+        return { step: "Sensing Telemetry", substep: "Aggregating timeseries zone values", color: "bg-emerald-500 animate-pulse" };
+      case "analyzing_data":
+        return { step: "AI Analysis", substep: "LangGraph isolating utility load leaks", color: "bg-indigo-500 animate-pulse" };
+      case "generating_ai_report":
+        return { step: "Report Gen", substep: "Ollama drafting audit report markdown", color: "bg-indigo-500 animate-pulse" };
+      case "applying_optimization":
+        return { step: "Actuation Update", substep: "Pushing target setpoint changes", color: "bg-sky-500 animate-pulse" };
+      case "completed":
+        return { step: "System Completed", substep: "Comfort bounds verified", color: "bg-emerald-500" };
+      case "failed":
+        return { step: "Pipeline Error", substep: "System loop crash", color: "bg-rose-500" };
+      default:
+        return { step: "System Idle", substep: "Awaiting simulation request", color: "bg-zinc-500" };
+    }
+  })();
 
   return (
     <aside className="w-64 bg-zinc-950 border-r border-zinc-800 text-zinc-300 flex flex-col h-full flex-shrink-0">
@@ -61,13 +88,20 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Footer Info */}
-      <div className="p-4 border-t border-zinc-800 text-center">
-        <div className="bg-zinc-900/40 rounded-lg p-3 border border-zinc-800/40">
-          <div className="text-xs text-zinc-500 font-medium">Running Local Model</div>
-          <div className="text-sm font-semibold text-emerald-400 mt-1">Qwen3:8b</div>
+      {/* Footer Info: Step and Substep Tracker */}
+      <div className="p-4 border-t border-zinc-800">
+        <div className="bg-zinc-900/40 rounded-lg p-3 border border-zinc-850 space-y-2 text-left">
+          <div className="flex items-center gap-2">
+            <span className={cn("h-2 w-2 rounded-full", statusInfo.color)} />
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Active Step</span>
+          </div>
+          <div className="space-y-0.5">
+            <div className="text-xs font-bold text-white tracking-tight">{statusInfo.step}</div>
+            <div className="text-[10px] leading-relaxed text-zinc-500 font-medium">{statusInfo.substep}</div>
+          </div>
         </div>
       </div>
     </aside>
   );
 }
+

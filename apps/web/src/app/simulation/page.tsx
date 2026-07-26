@@ -111,6 +111,47 @@ export default function Simulation() {
           </CardContent>
         </Card>
 
+        {/* EnergyPlus Metadata Panel */}
+        <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <Cpu className="h-4.5 w-4.5 text-zinc-500" />
+              Engine Metadata
+            </CardTitle>
+            <CardDescription>Active compiler & profile attributes</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-zinc-500 font-semibold uppercase tracking-wider">IDF Model</span>
+                <span className="font-mono text-zinc-900 dark:text-zinc-100 font-medium">
+                  {simState.currentModel || "small_office.idf"}
+                </span>
+              </div>
+              <div className="flex justify-between items-start text-xs gap-4">
+                <span className="text-zinc-500 font-semibold uppercase tracking-wider flex-shrink-0">Weather File</span>
+                <span className="font-mono text-zinc-900 dark:text-zinc-100 text-xs font-medium break-all text-right">
+                  {simState.currentWeather || "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-zinc-500 font-semibold uppercase tracking-wider">Duration</span>
+                <span className="text-zinc-900 dark:text-zinc-100 font-medium">24 Hours (Full Schedule)</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-zinc-500 font-semibold uppercase tracking-wider">EnergyPlus Version</span>
+                <span className="text-zinc-900 dark:text-zinc-100 font-medium">V23.2.0 (Compiled Engine)</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-zinc-500 font-semibold uppercase tracking-wider">Current Speed</span>
+                <Badge variant="outline" className="font-semibold text-emerald-500 border-emerald-500/20 bg-emerald-500/5">
+                  {simState.speedMultiplier}x Factor
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Manual Overrides */}
         <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
           <CardHeader>

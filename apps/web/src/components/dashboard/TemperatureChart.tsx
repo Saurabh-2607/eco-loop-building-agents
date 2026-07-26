@@ -14,6 +14,27 @@ export default function TemperatureChart() {
     Outdoor: m.outdoorTemp,
   }));
 
+  if (metrics.length === 0) {
+    return (
+      <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <Thermometer className="h-4.5 w-4.5 text-amber-500" />
+            Thermal Analytics
+          </CardTitle>
+          <CardDescription>Indoor vs outdoor air temperatures</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-72 w-full flex flex-col items-center justify-center border border-dashed border-zinc-200 dark:border-zinc-805/60 rounded-lg p-6 text-center text-zinc-400">
+            <Thermometer className="h-8 w-8 mb-2 text-zinc-300 dark:text-zinc-700" />
+            <p className="text-sm font-semibold text-zinc-500">No live telemetry available</p>
+            <p className="text-xs max-w-xs mt-1">Start a simulation process to begin receiving real-time temperature records.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between pb-4">

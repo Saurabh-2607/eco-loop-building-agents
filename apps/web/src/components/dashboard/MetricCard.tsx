@@ -36,10 +36,13 @@ export default function MetricCard({
 
         <div className="mt-4 flex items-baseline gap-2">
           {/* Main KPI Value */}
-          <span className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-white">
+          <span className={cn(
+            "font-bold tracking-tight text-zinc-950 dark:text-white",
+            typeof value === "string" && value.includes("No") ? "text-sm text-zinc-400 font-medium" : "text-3xl"
+          )}>
             {value}
           </span>
-          {unit && (
+          {unit && typeof value === "number" && (
             <span className="text-sm font-semibold text-zinc-400 dark:text-zinc-500">
               {unit}
             </span>

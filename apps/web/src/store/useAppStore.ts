@@ -1,8 +1,7 @@
 import { create } from "zustand";
 import { SimulationMetric, AgentDecision, SystemLog, SimulationState, SystemSettings } from "@/types";
 import { 
-  mockSystemSettings, 
-  mockDashboardSummary
+  mockSystemSettings
 } from "@/lib/mock-data";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
@@ -17,7 +16,12 @@ interface AppStore {
   metrics: SimulationMetric[];
   decisions: AgentDecision[];
   logs: SystemLog[];
-  summary: typeof mockDashboardSummary;
+  summary: {
+    energy?: number;
+    temperature?: number;
+    occupancy?: number;
+    savings?: number;
+  };
   wsConnected: boolean;
   aiReport: string;
   aiReportLoading: boolean;
@@ -63,10 +67,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
   decisions: [],
   logs: [],
   summary: {
-    energy: 0,
-    temperature: 0,
-    occupancy: 0,
-    savings: 0
+    energy: undefined,
+    temperature: undefined,
+    occupancy: undefined,
+    savings: undefined
   },
   wsConnected: false,
   aiReport: "",
@@ -155,7 +159,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
   })),
 
   addMetricPoint: (point) => set((state) => {
-    const newMetrics = [...state.metrics.slice(1), point];
+    const maxPoints = 24;
+    const newMetrics = state.metrics.length >= maxPoints
+      ? [...state.metrics.slice(1), point]
+      : [...state.metrics, point];
     return { 
       metrics: newMetrics,
       summary: {

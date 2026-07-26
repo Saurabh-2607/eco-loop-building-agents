@@ -26,6 +26,8 @@ interface AppStore {
   aiReport: string;
   aiReportLoading: boolean;
   optimizationLoading: boolean;
+  detailedStatus: "idle" | "initializing" | "loading_model" | "running_energyplus" | "collecting_telemetry" | "analyzing_data" | "generating_ai_report" | "applying_optimization" | "completed" | "failed";
+  setDetailedStatus: (status: "idle" | "initializing" | "loading_model" | "running_energyplus" | "collecting_telemetry" | "analyzing_data" | "generating_ai_report" | "applying_optimization" | "completed" | "failed") => void;
 
   // Actions
   setSimStatus: (status: SimulationState["status"]) => void;
@@ -76,6 +78,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
   aiReport: "",
   aiReportLoading: false,
   optimizationLoading: false,
+  detailedStatus: "idle",
+  setDetailedStatus: (detailedStatus) => set({ detailedStatus }),
 
   setSimStatus: (status) => set((state) => {
     const updatedSim = { ...state.simState, status };
@@ -209,16 +213,26 @@ export const useAppStore = create<AppStore>((set, get) => ({
             hvacPower: payload.hvac_power_kw || 0.0,
             lightingPower: payload.lighting_power_kw || 0.0
           };
+          set({ detailedStatus: "collecting_telemetry" });
           get().addMetricPoint(metric);
         } else if (data.event === "SIMULATION_PROGRESS") {
           const payload = data.payload;
-          set((state) => ({
-            simState: {
-              ...state.simState,
-              status: payload.status || state.simState.status,
-              elapsedSeconds: state.simState.elapsedSeconds + 1
+          set((state) => {
+            let detStatus = state.detailedStatus;
+            if (payload.status === "running") {
+              detStatus = payload.progress >= 90 ? "collecting_telemetry" : "running_energyplus";
+            } else if (payload.status === "parsing") {
+              detStatus = "analyzing_data";
             }
-          }));
+            return {
+              simState: {
+                ...state.simState,
+                status: payload.status || state.simState.status,
+                elapsedSeconds: state.simState.elapsedSeconds + 1
+              },
+              detailedStatus: detStatus
+            };
+          });
           get().addLog({
             timestamp: new Date().toLocaleTimeString(),
             level: "INFO",
@@ -230,7 +244,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
             simState: {
               ...state.simState,
               status: "finished"
-            }
+            },
+            detailedStatus: "analyzing_data"
           }));
           get().addLog({
             timestamp: new Date().toLocaleTimeString(),
@@ -329,13 +344,14 @@ console.log("LIVE SIMULATION LOADED", {
   startSimulation: async (name: string) => {
     try {
       set({
+        detailedStatus: "initializing",
         metrics: [],
         logs: [],
         summary: {
-          energy: 0,
-          temperature: 0,
-          occupancy: 0,
-          savings: 0
+          energy: undefined,
+          temperature: undefined,
+          occupancy: undefined,
+          savings: undefined
         }
       });
       get().addLog({
@@ -344,6 +360,14 @@ console.log("LIVE SIMULATION LOADED", {
         service: "frontend",
         message: `Triggering run request for simulation: "${name}"`
       });
+
+      // Step 1 Onboarding transition delay: initializing -> loading model
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      set({ detailedStatus: "loading_model" });
+
+      // Step 2 Onboarding transition delay: loading model -> running energyplus
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      set({ detailedStatus: "running_energyplus" });
 
       const res = await fetch(`${API_URL}/api/v1/simulation/start`, {
         method: "POST",
@@ -368,6 +392,7 @@ console.log("LIVE SIMULATION LOADED", {
     } catch (e) {
       const err = e as Error;
       console.error(err);
+      set({ detailedStatus: "failed" });
       get().addLog({
         timestamp: new Date().toLocaleTimeString(),
         level: "ERROR",
@@ -450,6 +475,7 @@ console.log("LIVE SIMULATION LOADED", {
           const latestPoint = mappedMetrics[mappedMetrics.length - 1];
           set({ 
             metrics: mappedMetrics,
+            detailedStatus: "generating_ai_report",
             summary: {
               energy: Math.round(latestPoint.hvacPower + latestPoint.lightingPower),
               temperature: latestPoint.indoorTemp,
@@ -514,6 +540,7 @@ console.log("LIVE SIMULATION LOADED", {
       const payload = await res.json();
       if (payload.success && payload.data) {
         set((state) => ({
+          detailedStatus: "applying_optimization",
           summary: {
             ...state.summary,
             savings: payload.data.estimated_savings_percent
@@ -617,7 +644,8 @@ console.log("LIVE SIMULATION LOADED", {
 
       set((state) => ({
         decisions: mappedDecisions.length > 0 ? mappedDecisions : state.decisions,
-        aiReport: repPayload.success ? repPayload.data.final_report : state.aiReport
+        aiReport: repPayload.success ? repPayload.data.final_report : state.aiReport,
+        detailedStatus: "completed"
       }));
     } catch (e) {
       console.warn("Failed retrieving AI reports and decisions:", e);

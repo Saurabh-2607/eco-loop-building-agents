@@ -6,7 +6,7 @@ import EnergyChart from "@/components/dashboard/EnergyChart";
 import TemperatureChart from "@/components/dashboard/TemperatureChart";
 import OccupancyChart from "@/components/dashboard/OccupancyChart";
 import SystemStatus from "@/components/dashboard/SystemStatus";
-import RecentActions from "@/components/dashboard/RecentActions";
+import AgentActivityFeed from "@/components/dashboard/AgentActivityFeed";
 import AIReasoningCard from "@/components/dashboard/AIReasoningCard";
 import ClosedLoopVisualization from "@/components/dashboard/ClosedLoopVisualization";
 import OnboardingModal from "@/components/dashboard/OnboardingModal";
@@ -93,7 +93,7 @@ export default function Dashboard() {
 
       {/* 6. Logs & Secondary Metrics Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RecentActions />
+        <AgentActivityFeed />
         <OccupancyChart />
       </div>
     </div>

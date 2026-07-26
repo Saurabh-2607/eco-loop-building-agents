@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Play, Pause, RotateCcw, Cpu, Sliders, PlayCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import SimulationProgress from "@/components/simulation/SimulationProgress";
+import LoadingOverlay from "@/components/simulation/LoadingOverlay";
 
 export default function Simulation() {
   const { 
@@ -38,8 +39,12 @@ export default function Simulation() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
+      {/* Boot transition loader */}
+      <LoadingOverlay />
+
       {/* Run State Panel */}
       <div className="lg:col-span-1 space-y-6">
+
         {/* Live Timeline Stepper */}
         <SimulationProgress />
 

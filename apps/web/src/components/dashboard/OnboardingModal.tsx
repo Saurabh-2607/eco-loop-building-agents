@@ -11,14 +11,14 @@ export default function OnboardingModal() {
   const router = useRouter();
 
   useEffect(() => {
-    const seen = localStorage.getItem("ecoloop_onboarding_seen");
+    const seen = localStorage.getItem("ecoloop_onboarding_completed");
     if (!seen) {
       setTimeout(() => setOpen(true), 0);
     }
   }, []);
 
   const handleDismiss = () => {
-    localStorage.setItem("ecoloop_onboarding_seen", "true");
+    localStorage.setItem("ecoloop_onboarding_completed", "true");
     setOpen(false);
   };
 
@@ -27,67 +27,49 @@ export default function OnboardingModal() {
     router.push("/simulation");
   };
 
+  const onboardingSteps = [
+    { num: 1, title: "Run EnergyPlus simulation", desc: "Start runtime emulators with standard Chicago Office schedules." },
+    { num: 2, title: "AI analyzes building behavior", desc: "The LangGraph agent checks raw metrics to find heating/cooling issues." },
+    { num: 3, title: "Agent generates optimization decisions", desc: "Derive recommended temperature ranges and light output settings." },
+    { num: 4, title: "System applies improvements", desc: "Send automated override setpoints back into operational loops." },
+    { num: 5, title: "Measure savings", desc: "Aggregated analytics tables chart utility saving percentages." }
+  ];
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6 shadow-xl rounded-2xl select-none">
         <DialogHeader className="space-y-2">
           <div className="mx-auto h-12 w-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20">
-            <Sparkles className="h-6 w-6 fill-current" />
+            <Sparkles className="h-6 w-6 fill-current animate-pulse" />
           </div>
           <DialogTitle className="text-xl font-bold text-center text-zinc-900 dark:text-white">
             Welcome to EcoLoop
           </DialogTitle>
           <DialogDescription className="text-center text-xs text-zinc-500 max-w-xs mx-auto">
-            Autonomous Building Energy Management & Optimization Agent
+            Your Autonomous AI Building Optimization Agent
           </DialogDescription>
         </DialogHeader>
 
         <div className="my-6 space-y-4">
-          <div className="flex gap-3">
-            <div className="h-8 w-8 rounded-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-150 flex items-center justify-center font-bold text-xs text-zinc-500 flex-shrink-0">
-              1
+          {onboardingSteps.map((step) => (
+            <div key={step.num} className="flex gap-3">
+              <div className="h-7 w-7 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-150 flex items-center justify-center font-bold text-xs text-zinc-500 flex-shrink-0">
+                {step.num}
+              </div>
+              <div className="space-y-0.5">
+                <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                  {step.title}
+                </h4>
+                <p className="text-[10px] leading-relaxed text-zinc-400 dark:text-zinc-500">
+                  {step.desc}
+                </p>
+              </div>
             </div>
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                Simulate Your Building
-              </h4>
-              <p className="text-[11px] text-zinc-450 leading-relaxed dark:text-zinc-400 mt-0.5">
-                Load custom building models and weather data schedules into the EnergyPlus thermal emulator.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <div className="h-8 w-8 rounded-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-150 flex items-center justify-center font-bold text-xs text-zinc-500 flex-shrink-0">
-              2
-            </div>
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
-                AI Performance Analysis
-              </h4>
-              <p className="text-[11px] text-zinc-450 leading-relaxed dark:text-zinc-400 mt-0.5">
-                The LangGraph agent scans timeseries telemetry outputs to isolate heating, cooling, and lighting inefficiencies.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <div className="h-8 w-8 rounded-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-150 flex items-center justify-center font-bold text-xs text-zinc-500 flex-shrink-0">
-              3
-            </div>
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
-                Apply Optimizations
-              </h4>
-              <p className="text-[11px] text-zinc-450 leading-relaxed dark:text-zinc-400 mt-0.5">
-                Automatically submit actuation overrides to scheduling modules, reducing carbon footprints by up to 15%.
-              </p>
-            </div>
-          </div>
+          ))}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2 mt-4">
-          <Button variant="outline" onClick={handleDismiss} className="flex-1 font-semibold text-xs h-9 border border-zinc-200 text-zinc-600">
+          <Button variant="outline" onClick={handleDismiss} className="flex-1 font-semibold text-xs h-9 border border-zinc-205/50 text-zinc-500 hover:bg-zinc-50">
             Skip Intro
           </Button>
           <Button onClick={handleStartSim} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs h-9 shadow-[0_4px_12px_rgba(16,185,129,0.2)]">

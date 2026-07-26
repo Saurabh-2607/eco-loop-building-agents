@@ -25,11 +25,19 @@ export default function Navbar() {
   const lastUpdate = lastMetric ? lastMetric.timestamp : "22:00";
 
   const calculateNextOptimization = (timestamp: string) => {
-    const parts = timestamp.split(":");
+    let timePart = timestamp;
+    let datePart = "";
+    if (timestamp.includes(", ")) {
+      const splitParts = timestamp.split(", ");
+      datePart = splitParts[0] + ", ";
+      timePart = splitParts[1];
+    }
+    const parts = timePart.split(":");
     if (parts.length < 2) return "23:00";
     const hour = parseInt(parts[0], 10);
+    if (isNaN(hour)) return "23:00";
     const nextHour = (hour + 1) % 24;
-    return `${String(nextHour).padStart(2, "0")}:00`;
+    return `${datePart}${String(nextHour).padStart(2, "0")}:00`;
   };
   const nextOptimization = calculateNextOptimization(lastUpdate);
 

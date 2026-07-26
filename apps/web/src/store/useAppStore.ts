@@ -826,14 +826,28 @@ export const useAppStore = create<AppStore>((set, get) => ({
         message: "Manually triggering immediate AI Optimization cycle..."
       });
 
+      // Progressively animate the stages: Observe, Analyze, Decide, Actuate
+      set({ detailedStatus: "initializing" });
+      await new Promise((resolve) => setTimeout(resolve, 800)); // Observe processing
+
+      set({ detailedStatus: "collecting_telemetry" });
+      await new Promise((resolve) => setTimeout(resolve, 800)); // Analyze processing
+
+      set({ detailedStatus: "analyzing_data" });
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Decide processing
+
+      set({ detailedStatus: "applying_optimization" }); // Actuate processing
+
       const res = await fetch(`${API_URL}/api/v1/ai/optimize_now`, {
         method: "POST"
       });
       const payload = await res.json();
       if (payload.success && payload.data) {
+        await new Promise((resolve) => setTimeout(resolve, 800)); // finish Actuate step
         set({
           aiReport: payload.data.reasoning,
-          aiReportLoading: false
+          aiReportLoading: false,
+          detailedStatus: "completed"
         });
         get().addLog({
           timestamp: new Date().toLocaleTimeString(),
@@ -853,7 +867,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     } catch (e) {
       const err = e as Error;
       console.error(err);
-      set({ aiReportLoading: false });
+      set({ aiReportLoading: false, detailedStatus: "failed" });
       get().addLog({
         timestamp: new Date().toLocaleTimeString(),
         level: "ERROR",

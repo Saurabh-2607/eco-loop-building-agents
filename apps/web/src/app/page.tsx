@@ -15,12 +15,13 @@ import ClosedLoopVisualization from "@/components/dashboard/ClosedLoopVisualizat
 import { useEffect } from "react";
 
 export default function Dashboard() {
-  const { summary, simLoading, connectWebSocket, fetchLatestSimulation } = useAppStore();
+  const { summary, simLoading, connectWebSocket, fetchLatestSimulation, fetchRealtimeState } = useAppStore();
 
   useEffect(() => {
     connectWebSocket();
     fetchLatestSimulation();
-  }, [connectWebSocket, fetchLatestSimulation]);
+    fetchRealtimeState();
+  }, [connectWebSocket, fetchLatestSimulation, fetchRealtimeState]);
 
   const hasEnergy = summary.energy != null;
   const hasTemp = summary.temperature != null;

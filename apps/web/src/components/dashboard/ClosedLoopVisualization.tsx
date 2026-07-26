@@ -3,29 +3,42 @@
 import { useAppStore } from "@/store/useAppStore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, PlayCircle, Cpu, Eye, Check, Sliders, RefreshCw } from "lucide-react";
+import { CheckCircle2, PlayCircle, Cpu, Eye, Check, Sliders, RefreshCw, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import InfoTooltip from "@/components/dashboard/InfoTooltip";
 
 const STAGES = [
   { id: "RUNNING", name: "Simulation Running", desc: "EnergyPlus digital twin running continuously", icon: PlayCircle },
-  { id: "COLLECTED", name: "Data Collected", desc: "Hourly metrics committed to telemetry database", icon: Eye },
-  { id: "ANALYSIS", name: "AI Analysis", desc: "LangGraph reasoning over load variance & comfort", icon: Cpu },
-  { id: "OPTIMIZATION", name: "Applying Optimization", desc: "Setpoint adjustments actuated in config", icon: Sliders },
-  { id: "VERIFICATION", name: "Verification", desc: "Evaluating occupant comfort & energy savings", icon: CheckCircle2 },
+  { id: "COLLECTION", name: "Data Collection", desc: "Collecting raw building telemetry sensors", icon: Eye },
+  { id: "PROCESSING", name: "Processing", desc: "Processing energy metrics and updating database", icon: Sliders },
+  { id: "ANALYSIS", name: "AI Analysis", desc: "LangGraph reasoning over comfort limits", icon: Cpu },
+  { id: "ACTUATION", name: "Optimization Applied", desc: "Dynamic comfort overrides actuated in config", icon: CheckCircle2 },
 ];
 
 export default function ClosedLoopVisualization() {
-  const { simState, detailedStatus, wsConnected } = useAppStore();
+  const { simState, detailedStatus, wsConnected, metrics } = useAppStore();
 
   const activeIndex = (() => {
     if (detailedStatus === "initializing" || detailedStatus === "loading_model") return 0;
     if (detailedStatus === "running_energyplus") return 1;
-    if (detailedStatus === "analyzing_data") return 2;
-    if (detailedStatus === "applying_optimization") return 3;
+    if (detailedStatus === "collecting_telemetry") return 2;
+    if (detailedStatus === "analyzing_data") return 3;
+    if (detailedStatus === "applying_optimization") return 4;
     if (detailedStatus === "completed" || simState.status === "finished") return 4;
-    return 0;
+    return 1; // Default active data collection
   })();
+
+  const lastMetric = metrics[metrics.length - 1];
+  const lastUpdate = lastMetric ? lastMetric.timestamp : "22:00";
+  
+  const calculateNextOptimization = (timestamp: string) => {
+    const parts = timestamp.split(":");
+    if (parts.length < 2) return "23:00";
+    const hour = parseInt(parts[0], 10);
+    const nextHour = (hour + 1) % 24;
+    return `${String(nextHour).padStart(2, "0")}:00`;
+  };
+  const nextOptimization = calculateNextOptimization(lastUpdate);
 
   return (
     <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm overflow-hidden h-full flex flex-col">
@@ -33,7 +46,7 @@ export default function ClosedLoopVisualization() {
         <div>
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <RefreshCw className="h-4.5 w-4.5 text-neutral-500 animate-spin" style={{ animationDuration: "8s" }} />
-            Autonomous Closed-Loop Pipeline
+            EcoLoop Real-Time Optimization
             <InfoTooltip content="Shows the live status of the automation cycle: digital twin execution, hourly database polling, AI LangGraph auditing, actuating overrides, and verifying saving margins." />
           </CardTitle>
           <CardDescription>Real-time execution path of the building optimization network</CardDescription>
@@ -49,7 +62,7 @@ export default function ClosedLoopVisualization() {
       </CardHeader>
 
       <CardContent className="p-4 flex-1 flex flex-col justify-between">
-        <div className="space-y-2.5 flex-1 flex flex-col justify-between">
+        <div className="space-y-2 flex-1 flex flex-col justify-between">
           {STAGES.map((stage, idx) => {
             const isCompleted = idx < activeIndex;
             const isActive    = idx === activeIndex;
@@ -58,10 +71,10 @@ export default function ClosedLoopVisualization() {
             return (
               <div
                 key={stage.id}
-                className="bg-neutral-50/50 border border-neutral-100 rounded-3xl p-3.5 flex items-center justify-between flex-1 gap-4"
+                className="bg-neutral-50/50 border border-neutral-100 rounded-3xl p-3 flex items-center justify-between flex-1 gap-4"
               >
                 {/* Left side: Icon + Name and description */}
-                <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
                   <div
                     className={cn("flex items-center justify-center flex-shrink-0 rounded-3xl", isActive && "animate-pulse")}
                     style={{
@@ -124,6 +137,17 @@ export default function ClosedLoopVisualization() {
               </div>
             );
           })}
+        </div>
+
+        {/* Next Cycle footer info */}
+        <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-900/60 flex items-center justify-between text-xs text-zinc-500 font-medium">
+          <span className="flex items-center gap-1.5 font-mono">
+            <Clock className="h-3.5 w-3.5 text-indigo-500" />
+            Next Cycle: {nextOptimization}
+          </span>
+          <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
+            Continuous Loop Active
+          </span>
         </div>
       </CardContent>
     </Card>

@@ -10,16 +10,16 @@ class SimulationWorker:
     def __init__(self):
         self.active_tasks = {}
 
-    def start_simulation_task(self, sim_id: UUID, name: str):
+    def start_simulation_task(self, sim_id: UUID, name: str, start_step: int = 1):
         """
         Starts a non-blocking background task to run the step-by-step simulation.
         """
-        task = asyncio.create_task(self._run_simulation_steps(sim_id, name))
+        task = asyncio.create_task(self._run_simulation_steps(sim_id, name, start_step))
         self.active_tasks[sim_id] = task
         return task
 
-    async def _run_simulation_steps(self, sim_id: UUID, name: str):
-        logger.info(f"Starting real-time simulation worker loop for run: {sim_id}")
+    async def _run_simulation_steps(self, sim_id: UUID, name: str, start_step: int = 1):
+        logger.info(f"Starting real-time simulation worker loop for run: {sim_id} at start_step: {start_step}")
         
         try:
             # 1. Publish start event
@@ -30,10 +30,11 @@ class SimulationWorker:
                 "timestamp": datetime.utcnow().isoformat()
             })
             
-            current_indoor_temp = 22.5
-            current_date = datetime.utcnow()
+            # Initial conditions
+            current_indoor_temp = 24.8  # Match the 22:00 seed temperature
+            current_date = datetime.fromisoformat("2026-07-26T17:00:00")
             
-            step = 1
+            step = start_step
             while True:
                 # Retrieve latest overrides in real-time via Controller
                 from app.energyplus.controller import energyplus_controller
@@ -42,7 +43,7 @@ class SimulationWorker:
                 light_dim = overrides["lighting_dim"]
                 
                 # Dynamic environmental drift simulation
-                hour = (8 + step) % 24  # Start simulation from 08:00 AM
+                hour = (8 + step) % 24  # Start simulation relative to timeline hours
                 is_working_hours = 8 <= hour <= 18
                 
                 # Outdoor diurnal curve model (peak in afternoon)

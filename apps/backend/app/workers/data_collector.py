@@ -1,5 +1,6 @@
 import asyncio
 import json
+from uuid import UUID
 from loguru import logger
 from datetime import datetime, timedelta
 
@@ -44,7 +45,7 @@ async def run_data_collector():
                     metrics_repo = MetricsRepository(session)
                     
                     db_metric = SimulationMetric(
-                        simulation_id=run_id,
+                        simulation_id=UUID(run_id),
                         temperature=indoor_temp,
                         humidity=humidity,
                         occupancy=occupancy,

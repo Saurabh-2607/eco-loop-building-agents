@@ -42,6 +42,7 @@ interface AppStore {
   // Live Integrations API Actions
   connectWebSocket: () => void;
   fetchLatestSimulation: () => Promise<void>;
+  fetchRealtimeState: () => Promise<void>;
   startSimulation: (name: string) => Promise<void>;
   applyOverrides: (hvac: number, light: number) => Promise<void>;
   fetchHistoricalMetrics: (simId: string) => Promise<void>;
@@ -495,7 +496,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           currentWeather: ""
         },
         metrics: sortedMetrics,
-        detailedStatus: latest.data.status === "finished" ? "completed" : "idle",
+        detailedStatus: latest.data.status === "finished" ? "completed" : (latest.data.status === "running" ? "running_energyplus" : "idle"),
         logs: latest.data.status === "finished" ? mockSystemLogs : [],
         summary: summaryUpdate
       });
@@ -511,6 +512,25 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
   },
 
+  fetchRealtimeState: async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/v1/realtime/state`);
+      const data = await res.json();
+      if (data) {
+        set((state) => ({
+          summary: {
+            ...state.summary,
+            energy: data.energy || state.summary.energy,
+            temperature: data.temperature || state.summary.temperature,
+            occupancy: data.occupancy || state.summary.occupancy,
+            savings: state.summary.savings || 12.5
+          }
+        }));
+      }
+    } catch (e) {
+      console.warn("Failed fetching realtime state:", e);
+    }
+  },
 
   // Trigger simulation starting REST API
   startSimulation: async (name: string) => {

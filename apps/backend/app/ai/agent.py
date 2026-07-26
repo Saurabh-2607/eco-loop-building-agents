@@ -14,11 +14,14 @@ from app.ai.optimizer import ai_optimizer
 
 class AIAgent:
     @staticmethod
-    async def run_reasoning_cycle(simulation_id: UUID) -> dict:
+    async def run_reasoning_cycle(simulation_id) -> dict:
         """
         Retrieves recent metrics, runs the compiled LangGraph agent reasoning flow,
         registers the decision to the database, and returns recommendations.
         """
+        if isinstance(simulation_id, str):
+            simulation_id = UUID(simulation_id)
+            
         logger.info(f"AI Agent: Starting LangGraph reasoning loop for simulation {simulation_id}")
         
         async with async_session_maker() as session:

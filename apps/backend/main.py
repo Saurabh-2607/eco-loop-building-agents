@@ -13,6 +13,8 @@ from app.api.v1.router import api_router
 from app.core.pubsub import pubsub_broker
 from app.workers.data_collector import run_data_collector
 from app.workers.optimization_worker import run_optimization_worker
+from app.workers.simulation_worker import simulation_worker
+from app.database.seed import seed_simulation_data
 from app.websocket.manager import WebSocketManager
 from app.api.dependencies import get_websocket_manager
 
@@ -117,21 +119,40 @@ async def global_exception_handler(request: Request, exc: Exception):
 # Task reference tracking for background workers
 bg_data_collector_task = None
 bg_optimization_task = None
+bg_simulation_task = None
 
 @app.on_event("startup")
 async def startup_event():
-    global bg_data_collector_task, bg_optimization_task
+    global bg_data_collector_task, bg_optimization_task, bg_simulation_task
     logger.info("EcoLoop API application started.")
     
-    # Spawn continuous background tasks
+    # 1. Automatically seed database with the past 5 hours of data on boot
+    try:
+        sim = await seed_simulation_data()
+        
+        # 2. Automatically launch continuous background simulator twin starting at step 6 (Hour 23:00)
+        bg_simulation_task = simulation_worker.start_simulation_task(
+            sim.id, sim.simulation_name, start_step=6
+        )
+    except Exception as e:
+        logger.error(f"Failed to seed and start automatic simulation task: {e}")
+    
+    # 3. Spawn continuous background telemetry data collector and optimizer loops
     bg_data_collector_task = asyncio.create_task(run_data_collector())
     bg_optimization_task = asyncio.create_task(run_optimization_worker())
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    global bg_data_collector_task, bg_optimization_task
+    global bg_data_collector_task, bg_optimization_task, bg_simulation_task
     logger.info("EcoLoop API application shutting down.")
     
+    if bg_simulation_task:
+        bg_simulation_task.cancel()
+        try:
+            await bg_simulation_task
+        except asyncio.CancelledError:
+            pass
+            
     if bg_data_collector_task:
         bg_data_collector_task.cancel()
         try:

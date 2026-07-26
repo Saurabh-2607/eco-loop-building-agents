@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from uuid import uuid4
+from sqlalchemy import select
 
 from app.core.config import settings
 from app.core.logging import setup_logging
@@ -14,9 +15,12 @@ from app.core.pubsub import pubsub_broker
 from app.workers.data_collector import run_data_collector
 from app.workers.optimization_worker import run_optimization_worker
 from app.workers.simulation_worker import simulation_worker
-from app.database.seed import seed_simulation_data
 from app.websocket.manager import WebSocketManager
 from app.api.dependencies import get_websocket_manager
+from app.database.session import async_session_maker
+from app.database.database import engine
+from app.database.base import metadata
+from app.database.models.simulation import Simulation
 
 # Initialize Loguru Sinks
 setup_logging()
@@ -126,18 +130,41 @@ async def startup_event():
     global bg_data_collector_task, bg_optimization_task, bg_simulation_task
     logger.info("EcoLoop API application started.")
     
-    # 1. Automatically seed database with the past 5 hours of data on boot
+    # 1. Dynamically bootstrap table schemas if fallback SQLite engine is active
+    if "sqlite" in str(engine.url):
+        logger.info("SQLite engine detected. Bootstrapping schemas dynamically...")
+        async with engine.begin() as conn:
+            await conn.run_sync(metadata.create_all)
+            
+    # 2. Retrieve latest simulation run from database (Neon or SQLite)
     try:
-        sim = await seed_simulation_data()
-        
-        # 2. Automatically launch continuous background simulator twin starting at step 6 (Hour 23:00)
+        async with async_session_maker() as session:
+            query = select(Simulation).order_by(Simulation.created_at.desc()).limit(1)
+            res = await session.execute(query)
+            sim = res.scalar_one_or_none()
+            
+            if not sim:
+                logger.info("No active simulations found. Creating default twin simulation...")
+                sim = Simulation(
+                    id=uuid4(),
+                    simulation_name="Continuous Building Twin",
+                    status="running"
+                )
+                session.add(sim)
+                await session.commit()
+                # Refresh
+                query = select(Simulation).where(Simulation.id == sim.id).limit(1)
+                res = await session.execute(query)
+                sim = res.scalar_one()
+                
+        # 3. Automatically launch continuous background simulator twin starting at step 6 (Hour 23:00)
         bg_simulation_task = simulation_worker.start_simulation_task(
             sim.id, sim.simulation_name, start_step=6
         )
     except Exception as e:
-        logger.error(f"Failed to seed and start automatic simulation task: {e}")
+        logger.error(f"Failed to lookup or start automatic twin simulation: {e}")
     
-    # 3. Spawn continuous background telemetry data collector and optimizer loops
+    # 4. Spawn background data collector and optimization worker tasks
     bg_data_collector_task = asyncio.create_task(run_data_collector())
     bg_optimization_task = asyncio.create_task(run_optimization_worker())
 

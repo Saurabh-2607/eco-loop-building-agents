@@ -19,10 +19,12 @@ export default function ClosedLoopVisualization() {
 
   const activeIndex = (() => {
     if (detailedStatus === "initializing" || detailedStatus === "loading_model") return 0;
-    if (detailedStatus === "running_energyplus" || detailedStatus === "collecting_telemetry") return 1;
+    if (detailedStatus === "collecting_telemetry") return 1;
     if (detailedStatus === "analyzing_data") return 2;
-    if (detailedStatus === "applying_optimization" || detailedStatus === "completed" || simState.status === "finished") return 3;
-    return 1;
+    if (detailedStatus === "applying_optimization") return 3;
+    // When running normally (waiting for next tick) or completed, show all steps as completed (activeIndex = 4)
+    if (detailedStatus === "running_energyplus" || detailedStatus === "completed" || simState.status === "finished") return 4;
+    return 4; // Default to fully completed state between cycles
   })();
 
   const lastMetric = metrics[metrics.length - 1];

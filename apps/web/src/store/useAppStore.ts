@@ -480,7 +480,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         const latestPoint = sortedMetrics[sortedMetrics.length - 1];
         summaryUpdate = {
           energy: Math.round(latestPoint.hvacPower + latestPoint.lightingPower),
-          temperature: latestPoint.indoorTemp,
+          temperature: parseFloat(latestPoint.indoorTemp.toFixed(1)),
           occupancy: latestPoint.occupancyCount,
           savings: latest.data.status === "finished" ? 14.5 : undefined
         };
@@ -521,7 +521,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           summary: {
             ...state.summary,
             energy: data.energy || state.summary.energy,
-            temperature: data.temperature || state.summary.temperature,
+            temperature: data.temperature ? parseFloat(data.temperature.toFixed(1)) : state.summary.temperature,
             occupancy: data.occupancy || state.summary.occupancy,
             savings: state.summary.savings || 12.5
           }

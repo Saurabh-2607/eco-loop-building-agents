@@ -3,16 +3,15 @@
 import { useAppStore } from "@/store/useAppStore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, PlayCircle, Cpu, Eye, Check, Sliders, RefreshCw, Clock } from "lucide-react";
+import { PlayCircle, Cpu, Eye, Check, Sliders, RefreshCw, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import InfoTooltip from "@/components/dashboard/InfoTooltip";
 
 const STAGES = [
-  { id: "RUNNING", name: "Simulation Running", desc: "EnergyPlus digital twin running continuously", icon: PlayCircle },
-  { id: "COLLECTION", name: "Data Collection", desc: "Collecting raw building telemetry sensors", icon: Eye },
-  { id: "PROCESSING", name: "Processing", desc: "Processing energy metrics and updating database", icon: Sliders },
-  { id: "ANALYSIS", name: "AI Analysis", desc: "LangGraph reasoning over comfort limits", icon: Cpu },
-  { id: "ACTUATION", name: "Optimization Applied", desc: "Dynamic comfort overrides actuated in config", icon: CheckCircle2 },
+  { id: "OBSERVE", name: "Observation", desc: "Sensor data collection (temp, humidity, power)", icon: Eye },
+  { id: "ANALYZE", name: "Analysis", desc: "Extracting building envelope parameters", icon: Sliders },
+  { id: "DECIDE", name: "Decision", desc: "Ollama Qwen3:8B reasoning & recommendations", icon: Cpu },
+  { id: "ACTUATE", name: "Actuation", desc: "Submitting overrides to EnergyPlus simulator", icon: PlayCircle },
 ];
 
 export default function ClosedLoopVisualization() {
@@ -20,12 +19,10 @@ export default function ClosedLoopVisualization() {
 
   const activeIndex = (() => {
     if (detailedStatus === "initializing" || detailedStatus === "loading_model") return 0;
-    if (detailedStatus === "running_energyplus") return 1;
-    if (detailedStatus === "collecting_telemetry") return 2;
-    if (detailedStatus === "analyzing_data") return 3;
-    if (detailedStatus === "applying_optimization") return 4;
-    if (detailedStatus === "completed" || simState.status === "finished") return 4;
-    return 1; // Default active data collection
+    if (detailedStatus === "running_energyplus" || detailedStatus === "collecting_telemetry") return 1;
+    if (detailedStatus === "analyzing_data") return 2;
+    if (detailedStatus === "applying_optimization" || detailedStatus === "completed" || simState.status === "finished") return 3;
+    return 1;
   })();
 
   const lastMetric = metrics[metrics.length - 1];
@@ -62,7 +59,8 @@ export default function ClosedLoopVisualization() {
       </CardHeader>
 
       <CardContent className="p-4 flex-1 flex flex-col justify-between">
-        <div className="space-y-2 flex-1 flex flex-col justify-between">
+        {/* Stages list container with fixed space-y-3.5 instead of flexing children sizes to prevent squishing */}
+        <div className="space-y-3.5">
           {STAGES.map((stage, idx) => {
             const isCompleted = idx < activeIndex;
             const isActive    = idx === activeIndex;
@@ -71,12 +69,12 @@ export default function ClosedLoopVisualization() {
             return (
               <div
                 key={stage.id}
-                className="bg-neutral-50/50 border border-neutral-100 rounded-3xl p-3 flex items-center justify-between flex-1 gap-4"
+                className="bg-neutral-50/50 border border-neutral-100 dark:bg-zinc-900/10 dark:border-zinc-900 rounded-2xl p-3.5 flex items-center justify-between gap-4"
               >
                 {/* Left side: Icon + Name and description */}
-                <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="flex items-center gap-3.5 min-w-0 flex-1">
                   <div
-                    className={cn("flex items-center justify-center flex-shrink-0 rounded-3xl", isActive && "animate-pulse")}
+                    className={cn("flex items-center justify-center flex-shrink-0 rounded-2xl", isActive && "animate-pulse")}
                     style={{
                       width: 32,
                       height: 32,

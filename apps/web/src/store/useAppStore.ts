@@ -212,8 +212,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
         if (data.event === "SIMULATION_STEP") {
           const payload = data.payload;
           const comfort = calculatePmvPpd(payload.indoor_temp || 22.0);
+          const currentHour = get().metrics.length + 1;
+          const formattedHour = String(currentHour).padStart(2, "0") + ":00";
           const metric: SimulationMetric = {
-            timestamp: payload.timestamp || new Date().toLocaleTimeString(),
+            timestamp: formattedHour,
             indoorTemp: payload.indoor_temp || 22.0,
             outdoorTemp: payload.outdoor_temp || 28.5,
             relativeHumidity: payload.humidity || 48.0,

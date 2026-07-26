@@ -373,40 +373,19 @@
   }
 
   /* ── Buttons ─────────────────────────────────────────────── */
-  [data-slot="button"] {
-    border-radius: 24px !important;
+  [data-slot="button"],
+  button,
+  [role="button"] {
+    border-radius: 16px !important;
     box-shadow: none !important;
     transition: background-color 150ms ease-out, transform 100ms ease-out;
   }
-  [data-slot="button"][data-variant="default"],
-  [data-slot="button"]:not([data-variant]) {
-    background-color: var(--primary) !important;
-    color: var(--primary-foreground) !important;
-    border: none !important;
-  }
-  [data-slot="button"][data-variant="default"]:hover {
-    background-color: #404040 !important; /* neutral-700 */
-  }
-  [data-slot="button"][data-variant="default"]:active {
+  
+  [data-slot="button"]:active,
+  button:active {
     transform: scale(0.98);
   }
-  [data-slot="button"][data-variant="outline"] {
-    background-color: transparent !important;
-    border: 1px solid var(--border) !important;
-    color: var(--foreground) !important;
-  }
-  [data-slot="button"][data-variant="outline"]:hover {
-    background-color: var(--muted) !important;
-  }
-  [data-slot="button"][data-variant="ghost"] {
-    background-color: transparent !important;
-    color: var(--muted-foreground) !important;
-    border: none !important;
-  }
-  [data-slot="button"][data-variant="ghost"]:hover {
-    background-color: var(--muted) !important;
-    color: var(--foreground) !important;
-  }
+
 
   /* ── Cards ───────────────────────────────────────────────── */
   [data-slot="card"] {

@@ -79,8 +79,12 @@ class SimulationService:
 
     async def update_simulation_control(self, hvac_setpoint: float, lighting_dim: int) -> dict:
         """
-        Updates parameter override configs (stub).
+        Updates parameter override configs and live telemetry targets.
         """
+        from app.utils.background_tasks import active_overrides
+        active_overrides["hvac_setpoint"] = hvac_setpoint
+        active_overrides["lighting_dim"] = lighting_dim
+
         return {
             "status": "success",
             "applied": {

@@ -4,7 +4,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, RotateCcw, Cpu, Sliders, PlayCircle } from "lucide-react";
+import { Play, Pause, RotateCcw, Sliders, PlayCircle, Terminal } from "lucide-react";
 import { useState, useEffect } from "react";
 import SimulationProgress from "@/components/simulation/SimulationProgress";
 import LoadingOverlay from "@/components/simulation/LoadingOverlay";
@@ -12,6 +12,7 @@ import LoadingOverlay from "@/components/simulation/LoadingOverlay";
 export default function Simulation() {
   const { 
     simState, 
+    metrics,
     logs, 
     setSimStatus, 
     setSpeedMultiplier, 
@@ -38,215 +39,219 @@ export default function Simulation() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
+    <div className="animate-fade-in">
       {/* Boot transition loader */}
       <LoadingOverlay />
 
-      {/* Run State Panel */}
-      <div className="lg:col-span-1 space-y-6">
-
-        {/* Live Timeline Stepper */}
-        <SimulationProgress />
-
-        {/* Core Controls */}
-        <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-
-          <CardHeader>
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <PlayCircle className="h-4.5 w-4.5 text-zinc-500" />
-              Process Control
-            </CardTitle>
-            <CardDescription>Control EnergyPlus engine runtime process</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Simulation Status Badge */}
-            <div className="bg-zinc-50 dark:bg-zinc-900/60 p-4 rounded-xl border border-zinc-100 dark:border-zinc-900 flex justify-between items-center">
-              <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Current Status</span>
-              <Badge className={`font-semibold ${isRunning ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-amber-500/10 text-amber-500 border border-amber-500/20"}`}>
-                {simState.status.toUpperCase()}
-              </Badge>
-            </div>
-
-            {/* Run Actions */}
-            <div className="flex gap-2">
-              <Button 
-                variant={isRunning ? "secondary" : "default"}
-                onClick={() => {
-                  if (isRunning) {
-                    setSimStatus("paused");
-                  } else {
-                    startSimulation("Chicago Office Standard Simulation");
-                  }
-                }}
-                className="flex-1 text-xs h-9 font-semibold"
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        
+        {/* Left Column: Fixed Width on Desktop (460px) containing all Controls */}
+        <div className="flex flex-col gap-6 lg:w-[460px] flex-shrink-0 w-full">
+          
+          {/* Core Process Controls */}
+          <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <PlayCircle className="h-4.5 w-4.5 text-neutral-500" />
+                Process Control
+              </CardTitle>
+              <CardDescription>Control EnergyPlus engine runtime process</CardDescription>
+            </CardHeader>
+            <CardContent className="p-4 space-y-4">
+              {/* Simulation Status & Clock Row */}
+              <div
+                className="bg-neutral-50/50 border border-neutral-100 p-3.5 flex flex-col gap-2.5"
+                style={{ borderRadius: 16 }}
               >
-                {isRunning ? (
-                  <>
-                    <Pause className="h-4 w-4 mr-1.5" />
-                    Pause Simulation
-                  </>
-                ) : (
-                  <>
-                    <Play className="h-4 w-4 mr-1.5 fill-current" />
-                    Start Simulation
-                  </>
-                )}
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => setSimStatus("idle")}
-                className="text-xs h-9 font-semibold"
-              >
-                <RotateCcw className="h-4 w-4 mr-1.5" />
-                Reset
-              </Button>
-
-            </div>
-
-            {/* Speed Options */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">Simulator Speed Factor</label>
-              <div className="grid grid-cols-5 gap-1.5">
-                {speedOptions.map((opt) => (
-                  <Button
-                    key={opt}
-                    size="sm"
-                    variant={simState.speedMultiplier === opt ? "default" : "outline"}
-                    onClick={() => setSpeedMultiplier(opt)}
-                    className="h-8 text-xs font-semibold"
+                <div className="flex justify-between items-center w-full">
+                  <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Current Status</span>
+                  <Badge
+                    className="font-extrabold px-2.5 py-0.5 rounded text-[9px] uppercase tracking-wider flex items-center gap-1 border animate-fade-in"
+                    style={{
+                      backgroundColor: isRunning ? "#fafafa" : "#ffffff",
+                      borderColor: isRunning ? "#e5e5e5" : "#f0f0f0",
+                      color: isRunning ? "#16a34a" : "#737373",
+                    }}
                   >
-                    {opt}x
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* EnergyPlus Metadata Panel */}
-        <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Cpu className="h-4.5 w-4.5 text-zinc-500" />
-              Engine Metadata
-            </CardTitle>
-            <CardDescription>Active compiler & profile attributes</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-zinc-500 font-semibold uppercase tracking-wider">IDF Model</span>
-                <span className="font-mono text-zinc-900 dark:text-zinc-100 font-medium">
-                  {simState.currentModel || "small_office.idf"}
-                </span>
-              </div>
-              <div className="flex justify-between items-start text-xs gap-4">
-                <span className="text-zinc-500 font-semibold uppercase tracking-wider flex-shrink-0">Weather File</span>
-                <span className="font-mono text-zinc-900 dark:text-zinc-100 text-xs font-medium break-all text-right">
-                  {simState.currentWeather || "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"}
-                </span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-zinc-500 font-semibold uppercase tracking-wider">Duration</span>
-                <span className="text-zinc-900 dark:text-zinc-100 font-medium">24 Hours (Full Schedule)</span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-zinc-500 font-semibold uppercase tracking-wider">EnergyPlus Version</span>
-                <span className="text-zinc-900 dark:text-zinc-100 font-medium">V23.2.0 (Compiled Engine)</span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-zinc-500 font-semibold uppercase tracking-wider">Current Speed</span>
-                <Badge variant="outline" className="font-semibold text-emerald-500 border-emerald-500/20 bg-emerald-500/5">
-                  {simState.speedMultiplier}x Factor
-                </Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Manual Overrides */}
-        <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Sliders className="h-4.5 w-4.5 text-zinc-500" />
-              Manual Override
-            </CardTitle>
-            <CardDescription>Bypass LangGraph agent controls</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* HVAC override */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-zinc-400">
-                <span>HVAC cooling setpoint</span>
-                <span className="text-amber-500 font-semibold">{manualHvac.toFixed(1)}°C</span>
-              </div>
-              <input
-                type="range"
-                min="18.0"
-                max="28.0"
-                step="0.5"
-                value={manualHvac}
-                onChange={(e) => setManualHvac(parseFloat(e.target.value))}
-                className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
-              />
-            </div>
-
-            {/* Lighting Override */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-zinc-400">
-                <span>Lighting Intensity</span>
-                <span className="text-sky-500 font-semibold">{manualLight}%</span>
-              </div>
-              <input
-                type="range"
-                min="10"
-                max="100"
-                step="5"
-                value={manualLight}
-                onChange={(e) => setManualLight(parseInt(e.target.value))}
-                className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-sky-500"
-              />
-            </div>
-
-            <Button 
-              onClick={handleApplyOverride}
-              className="w-full text-xs h-9 font-semibold"
-            >
-              Apply Manual Actuations
-            </Button>
-
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Output Console Log terminal */}
-      <div className="lg:col-span-2">
-        <Card className="h-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col">
-          <CardHeader className="pb-3 flex-shrink-0">
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Cpu className="h-4.5 w-4.5 text-zinc-500" />
-              EnergyPlus Stdout Feed
-            </CardTitle>
-            <CardDescription>Live telemetry stream from active runtime wrapper thread</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1 min-h-[300px] flex flex-col p-4 bg-zinc-950 rounded-b-xl border-t border-zinc-900">
-            <div className="flex-1 font-mono text-xs text-zinc-400 overflow-y-auto space-y-2 p-2 select-text">
-              {logs.map((log) => (
-                <div key={log.id} className="leading-relaxed flex gap-2">
-                  <span className="text-zinc-600">[{log.timestamp}]</span>
-                  <span className={`font-semibold ${
-                    log.level === "INFO" ? "text-emerald-500" :
-                    log.level === "WARNING" ? "text-amber-500" : "text-rose-500"
-                  }`}>
-                    [{log.level}]
-                  </span>
-                  <span className="text-zinc-500">[{log.service}]</span>
-                  <span className="text-zinc-300">{log.message}</span>
+                    {simState.status.toUpperCase()}
+                  </Badge>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+
+                <div className="flex justify-between items-center w-full border-t border-neutral-100/50 pt-2.5">
+                  <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Simulated Clock</span>
+                  <span className="font-mono text-xs font-bold text-neutral-900">
+                    {metrics.length > 0 ? `${metrics[metrics.length - 1].timestamp} (Hour ${metrics.length} of 24)` : "00:00 (Idle)"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Run Actions */}
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => {
+                    if (isRunning) {
+                      setSimStatus("paused");
+                    } else {
+                      startSimulation("Chicago Office Standard Simulation");
+                    }
+                  }}
+                  className="flex-1 text-xs h-9 font-semibold transition-colors"
+                  style={{
+                    backgroundColor: isRunning ? "#ffffff" : "#171717",
+                    color: isRunning ? "#171717" : "#ffffff",
+                    border: isRunning ? "1px solid #e5e5e5" : "none",
+                  }}
+                >
+                  {isRunning ? (
+                    <>
+                      <Pause className="h-4 w-4 mr-1.5" />
+                      Pause Simulation
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4 mr-1.5 fill-current" />
+                      Start Simulation
+                    </>
+                  )}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSimStatus("idle")}
+                  className="text-xs h-9 font-semibold px-4"
+                  style={{ borderColor: "#e5e5e5", backgroundColor: "#ffffff" }}
+                >
+                  <RotateCcw className="h-4 w-4 mr-1.5" />
+                  Reset
+                </Button>
+              </div>
+
+              {/* Speed Options */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-neutral-450 uppercase tracking-wider block">Simulator Speed Factor</label>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {speedOptions.map((opt) => (
+                    <Button
+                      key={opt}
+                      size="sm"
+                      variant={simState.speedMultiplier === opt ? "default" : "outline"}
+                      onClick={() => setSpeedMultiplier(opt)}
+                      className="h-8 text-xs font-semibold"
+                      style={
+                        simState.speedMultiplier === opt
+                          ? { backgroundColor: "#171717", color: "#ffffff" }
+                          : { backgroundColor: "#ffffff", borderColor: "#e5e5e5", color: "#171717" }
+                      }
+                    >
+                      {opt}x
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Manual Overrides */}
+          <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Sliders className="h-4.5 w-4.5 text-neutral-500" />
+                Manual Override
+              </CardTitle>
+              <CardDescription>Bypass LangGraph agent controls</CardDescription>
+            </CardHeader>
+            <CardContent className="p-4 space-y-4">
+              {/* HVAC override */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-neutral-450">
+                  <span>HVAC cooling setpoint</span>
+                  <span className="text-neutral-900 font-bold">{manualHvac.toFixed(1)}°C</span>
+                </div>
+                <input
+                  type="range"
+                  min="18.0"
+                  max="28.0"
+                  step="0.5"
+                  value={manualHvac}
+                  onChange={(e) => setManualHvac(parseFloat(e.target.value))}
+                  className="w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-neutral-900"
+                  style={{ background: "#e5e5e5" }}
+                />
+              </div>
+
+              {/* Lighting Override */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-neutral-450">
+                  <span>Lighting Intensity</span>
+                  <span className="text-neutral-900 font-bold">{manualLight}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="10"
+                  max="100"
+                  step="5"
+                  value={manualLight}
+                  onChange={(e) => setManualLight(parseInt(e.target.value))}
+                  className="w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-neutral-900"
+                  style={{ background: "#e5e5e5" }}
+                />
+              </div>
+
+              <Button 
+                onClick={handleApplyOverride}
+                className="w-full text-xs h-9 font-semibold"
+                style={{ backgroundColor: "#171717", color: "#ffffff" }}
+              >
+                Apply Manual Actuations
+              </Button>
+            </CardContent>
+          </Card>
+
+        </div>
+
+        {/* Right Column: Fills Remaining Width (Visualization timeline + logs output) */}
+        <div className="flex flex-col gap-6 flex-1 w-full">
+          
+          {/* Horizontal Building Optimization Pipeline */}
+          <SimulationProgress />
+
+          {/* Full-Width Diagnostics Console Feed */}
+          <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm flex flex-col overflow-hidden">
+            <CardHeader className="pb-3 flex-shrink-0">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Terminal className="h-4.5 w-4.5 text-neutral-500" />
+                EnergyPlus Stdout Feed
+              </CardTitle>
+              <CardDescription>Live telemetry stream from active runtime wrapper thread</CardDescription>
+            </CardHeader>
+            <div 
+              className="font-mono text-[11px] overflow-y-auto space-y-2 p-5 select-text h-[350px] border-t border-neutral-900"
+              style={{ backgroundColor: "#09090b" }}
+            >
+                {logs.length === 0 ? (
+                  <div className="text-center py-20 text-neutral-550 italic" style={{ color: "#737373" }}>
+                    Stdout pipe empty. Start a simulation to stream live telemetry output.
+                  </div>
+                ) : (
+                  logs.map((log) => (
+                    <div key={log.id} className="leading-relaxed flex gap-2 flex-wrap md:flex-nowrap animate-fade-in">
+                      <span style={{ color: "#737373" }}>[{log.timestamp}]</span>
+                      <span 
+                        style={{
+                          fontWeight: 700,
+                          color: log.level === "INFO" ? "#10b981" : log.level === "WARNING" ? "#f59e0b" : "#ef4444"
+                        }}
+                      >
+                        [{log.level}]
+                      </span>
+                      <span style={{ color: "#a3a3a3" }}>[{log.service}]</span>
+                      <span style={{ color: "#e5e5e5" }}>{log.message}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+          </Card>
+
+        </div>
       </div>
     </div>
   );

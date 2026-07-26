@@ -39,38 +39,27 @@ export default function Navbar() {
   const runId = simState.runId;
 
   return (
-    <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex items-center justify-between px-8 select-none flex-shrink-0">
+    <header className="h-16 border-b border-border bg-card flex items-center justify-between px-8 select-none flex-shrink-0">
       {/* Title */}
       <div>
-        <h1 className="font-semibold text-lg text-zinc-900 dark:text-zinc-50">{pageTitle}</h1>
+        <h1 className="font-semibold text-sm tracking-tight text-foreground">{pageTitle}</h1>
       </div>
 
       {/* Simulator Controls & Badges */}
       <div className="flex items-center gap-4">
         {/* Simulator Status */}
         <div className="flex items-center gap-2 mr-2">
-          <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Simulator:</span>
+          <span className="text-[10px] font-bold text-zinc-400 font-mono uppercase tracking-widest">Simulator:</span>
           <Badge 
+            variant="outline"
             className={cn(
-              "font-medium px-2.5 py-0.5 rounded-full flex items-center gap-1.5 border",
-              simState.status === "running" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
-              simState.status === "paused" && "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-              simState.status === "idle" && "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-500/20",
-              simState.status === "error" && "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+              "font-mono uppercase text-[10px] px-2 py-0.5 rounded border font-semibold flex items-center gap-1",
+              simState.status === "running" && "text-emerald-600 border-emerald-500/20 bg-emerald-500/5",
+              simState.status === "paused" && "text-amber-600 border-amber-500/20 bg-amber-500/5",
+              simState.status === "idle" && "text-zinc-400 border-border bg-zinc-50",
+              simState.status === "error" && "text-rose-600 border-rose-500/20 bg-rose-500/5"
             )}
           >
-            {simState.status === "running" && (
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            )}
-            {simState.status === "paused" && (
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-            )}
-            {simState.status === "idle" && (
-              <span className="h-1.5 w-1.5 rounded-full bg-zinc-500" />
-            )}
-            {simState.status === "error" && (
-              <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
-            )}
             {simState.status.toUpperCase()}
           </Badge>
         </div>
@@ -86,16 +75,16 @@ export default function Navbar() {
               startSimulation(simState.currentModel || "Office Standard Run");
             }
           }}
-          className="h-8 text-xs font-medium flex items-center gap-1.5"
+          className="h-8 text-xs font-semibold px-3 border-border hover:bg-zinc-50 text-zinc-700"
         >
           {isRunning ? (
             <>
-              <Pause className="h-3.5 w-3.5 text-amber-500" />
+              <Pause className="h-3.5 w-3.5" />
               Pause Sim
             </>
           ) : (
             <>
-              <Play className="h-3.5 w-3.5 text-emerald-500 fill-current" />
+              <Play className="h-3.5 w-3.5 fill-current" />
               Start Sim
             </>
           )
@@ -107,7 +96,7 @@ export default function Navbar() {
           size="sm"
           onClick={() => triggerLiveOptimization(runId)}
           disabled={!runId || optimizationLoading}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs h-8 flex items-center gap-1.5 shadow-[0_4px_12px_rgba(16,185,129,0.2)] hover:shadow-[0_4px_16px_rgba(16,185,129,0.3)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {optimizationLoading ? (
             <>
@@ -123,5 +112,6 @@ export default function Navbar() {
         </Button>
       </div>
     </header>
+
   );
 }

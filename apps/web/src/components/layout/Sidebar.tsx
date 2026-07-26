@@ -9,9 +9,9 @@ import {
   BarChart3, 
   Play, 
   Cpu, 
-  Settings, 
-  Zap 
+  Settings 
 } from "lucide-react";
+
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -54,14 +54,15 @@ export default function Sidebar() {
     <aside className="w-64 bg-zinc-950 border-r border-zinc-800 text-zinc-300 flex flex-col h-full flex-shrink-0">
       {/* Brand Header */}
       <div className="h-16 flex items-center gap-3 px-6 border-b border-zinc-800">
-        <div className="bg-emerald-500 text-zinc-950 p-1.5 rounded-lg shadow-[0_0_15px_rgba(16,185,129,0.4)]">
-          <Zap className="h-5 w-5 fill-current" />
+        <div className="text-white text-base font-bold flex-shrink-0">
+          ▲
         </div>
         <div>
-          <span className="font-bold text-white text-lg tracking-tight">EcoLoop</span>
-          <span className="text-zinc-500 text-xs block font-medium -mt-1">BUILDING AGENT</span>
+          <span className="font-bold text-white text-sm tracking-tight block">EcoLoop</span>
+          <span className="text-zinc-500 text-[10px] font-bold font-mono tracking-wider block -mt-1">BUILDING AGENT</span>
         </div>
       </div>
+
 
       {/* Navigation Links */}
       <nav className="flex-1 px-4 py-6 space-y-1">

@@ -121,10 +121,12 @@ export default function Analytics() {
                   <TableCell className="font-mono text-zinc-500 dark:text-zinc-400 pl-6">{row.timestamp}</TableCell>
                   <TableCell className="text-center font-medium">{row.indoorTemp.toFixed(1)}°C</TableCell>
                   <TableCell className="text-center text-zinc-500">{row.outdoorTemp.toFixed(1)}°C</TableCell>
-                  <TableCell className={`text-center font-semibold ${Math.abs(row.pmv) > 0.5 ? "text-amber-500" : "text-emerald-500"}`}>
-                    {row.pmv.toFixed(2)}
+                  <TableCell className={`text-center font-semibold ${row.pmv === 0 ? "text-zinc-400 dark:text-zinc-600" : (Math.abs(row.pmv) > 0.5 ? "text-amber-500" : "text-emerald-500")}`}>
+                    {row.pmv === 0 ? "Pending" : row.pmv.toFixed(2)}
                   </TableCell>
-                  <TableCell className="text-center text-zinc-500">{row.ppd.toFixed(1)}%</TableCell>
+                  <TableCell className="text-center text-zinc-500">
+                    {row.ppd === 0 ? "Pending" : `${row.ppd.toFixed(1)}%`}
+                  </TableCell>
                   <TableCell className="text-center font-medium">{row.hvacPower} kW</TableCell>
                   <TableCell className="text-right text-zinc-500 pr-6">{row.lightingPower} kW</TableCell>
                 </TableRow>

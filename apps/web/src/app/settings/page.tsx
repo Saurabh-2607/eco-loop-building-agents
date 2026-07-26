@@ -1,120 +1,85 @@
 "use client";
 
-import { useAppStore } from "@/store/useAppStore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Cpu, Network, ShieldAlert } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
+import { Cpu, ClipboardList, Info, BadgeAlert, CheckCircle2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export default function SettingsPage() {
-  const { settings, updateSettings, addLog } = useAppStore();
-
-  // Local inputs state
-  const [apiUrl, setApiUrl] = useState(settings.apiUrl);
-  const [wsUrl, setWsUrl] = useState(settings.wsUrl);
-  const [ollamaHost, setOllamaHost] = useState(settings.ollamaHost);
-  const [modelName, setModelName] = useState(settings.modelName);
-  const [minCool, setMinCool] = useState(settings.minCoolingSetpoint);
-  const [maxCool, setMaxCool] = useState(settings.maxCoolingSetpoint);
-
-  const handleSave = () => {
-    updateSettings({
-      apiUrl,
-      wsUrl,
-      ollamaHost,
-      modelName,
-      minCoolingSetpoint: parseFloat(minCool.toString()),
-      maxCoolingSetpoint: parseFloat(maxCool.toString()),
-    });
-    addLog({
-      timestamp: new Date().toLocaleTimeString(),
-      level: "INFO",
-      service: "backend",
-      message: `System configuration values updated by operator.`
-    });
-    toast.success("Settings saved successfully.");
-  };
-
   return (
-    <div className="max-w-3xl mx-auto space-y-8 animate-fade-in">
-      {/* Network APIs */}
-      <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-        <CardHeader>
+    <div className="max-w-2xl mx-auto space-y-8 animate-fade-in select-none">
+      {/* System Information */}
+      <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm">
+        <CardHeader className="pb-3 border-b border-zinc-100 dark:border-zinc-900/60">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <Network className="h-4.5 w-4.5 text-zinc-500" />
-            API & Endpoint Configuration
+            <Cpu className="h-4.5 w-4.5 text-indigo-500" />
+            System Information
           </CardTitle>
-          <CardDescription>Configure routing endpoints linking components</CardDescription>
+          <CardDescription>Operational hardware and execution profiles</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">FastAPI Base URL</label>
-              <Input value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} className="h-9 text-xs" />
+        <CardContent className="p-6 space-y-4">
+          <div className="space-y-3 font-semibold text-xs">
+            <div className="flex justify-between items-center py-1.5 border-b border-zinc-100 dark:border-zinc-900/40">
+              <span className="text-zinc-500 uppercase tracking-wider">Building Model</span>
+              <span className="text-zinc-900 dark:text-zinc-100">Chicago Office Standard</span>
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">WebSocket Address</label>
-              <Input value={wsUrl} onChange={(e) => setWsUrl(e.target.value)} className="h-9 text-xs" />
+            <div className="flex justify-between items-center py-1.5 border-b border-zinc-100 dark:border-zinc-900/40">
+              <span className="text-zinc-500 uppercase tracking-wider">AI Model</span>
+              <span className="text-zinc-900 dark:text-zinc-100">qwen3:8b</span>
+            </div>
+            <div className="flex justify-between items-center py-1.5 border-b border-zinc-100 dark:border-zinc-900/40">
+              <span className="text-zinc-500 uppercase tracking-wider">Simulation Engine</span>
+              <span className="text-zinc-900 dark:text-zinc-100">EnergyPlus</span>
+            </div>
+            <div className="flex justify-between items-center py-1.5 pt-2">
+              <span className="text-zinc-500 uppercase tracking-wider">Status</span>
+              <Badge className="bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 dark:text-emerald-400 font-bold flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3" />
+                OPERATIONAL
+              </Badge>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* About EcoLoop */}
+      <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm">
+        <CardHeader className="pb-3 border-b border-zinc-100 dark:border-zinc-900/60">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <Info className="h-4.5 w-4.5 text-zinc-500" />
+            About EcoLoop
+          </CardTitle>
+          <CardDescription>Intelligent Building Energy Orchestrator</CardDescription>
+        </CardHeader>
+        <CardContent className="p-6 space-y-4">
+          <p className="text-xs leading-relaxed text-zinc-650 dark:text-zinc-400 font-medium">
+            EcoLoop is an autonomous system that balances occupant comfort and energy efficiency. 
+            By building a closed feedback loop between physical simulations and cognitive reasoning agents, 
+            it delivers optimal setpoint overrides dynamically.
+          </p>
+          
           <div className="space-y-2">
-            <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">Ollama Server Host</label>
-            <Input value={ollamaHost} onChange={(e) => setOllamaHost(e.target.value)} className="h-9 text-xs" />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Cognitive options */}
-      <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-        <CardHeader>
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <Cpu className="h-4.5 w-4.5 text-zinc-500" />
-            Intelligence Engine Model
-          </CardTitle>
-          <CardDescription>Select target reasoning weights</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">Active LLM Model</label>
-            <Input value={modelName} onChange={(e) => setModelName(e.target.value)} className="h-9 text-xs" />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Safety constraints bounds */}
-      <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-        <CardHeader>
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <ShieldAlert className="h-4.5 w-4.5 text-zinc-500" />
-            Building Comfort Boundaries
-          </CardTitle>
-          <CardDescription>Safety limit thresholds enforced on actuator commands</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">Min Cooling Setpoint (°C)</label>
-              <Input type="number" step="0.5" value={minCool} onChange={(e) => setMinCool(parseFloat(e.target.value))} className="h-9 text-xs" />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">Max Cooling Setpoint (°C)</label>
-              <Input type="number" step="0.5" value={maxCool} onChange={(e) => setMaxCool(parseFloat(e.target.value))} className="h-9 text-xs" />
+            <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Core Features</h4>
+            <div className="grid grid-cols-2 gap-2 text-[10px] font-bold text-zinc-600 dark:text-zinc-350">
+              <div className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                EnergyPlus Digital Twin
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
+                LangGraph Multi-Node Reasoning
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />
+                Rule-Based Guardrails
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                Real-Time Telemetry Streaming
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
-
-      {/* Save Button */}
-      <div className="flex justify-end select-none">
-        <Button 
-          onClick={handleSave}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs h-9 px-6 shadow-sm hover:shadow"
-        >
-          Save Configuration
-        </Button>
-      </div>
     </div>
   );
 }

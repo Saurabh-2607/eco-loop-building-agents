@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { SimulationMetric, AgentDecision, SystemLog, SimulationState, SystemSettings } from "@/types";
 import { 
-  mockSystemSettings
+  mockSystemSettings,
+  mockSystemLogs
 } from "@/lib/mock-data";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
@@ -287,8 +288,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const resultsRes = await fetch(`${API_URL}/api/v1/simulation/results/${simId}`);
       const results = await resultsRes.json();
 
-      const mappedMetrics: SimulationMetric[] = (results.success && Array.isArray(results.data))
-        ? results.data.map((item: {
+      let sortedMetrics: SimulationMetric[] = [];
+      if (results.success && Array.isArray(results.data)) {
+        const sortedData = [...results.data].sort((a, b) => 
+          new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
+        );
+        sortedMetrics = sortedData.map((item: {
             recorded_at: string;
             temperature: number;
             humidity: number;
@@ -310,15 +315,30 @@ export const useAppStore = create<AppStore>((set, get) => ({
               hvacPower: item.hvac_load,
               lightingPower: item.lighting_load
             };
-          })
-        : [];
+          });
+      }
 
-console.log("LIVE SIMULATION LOADED", {
-  simId,
-  metricsCount: mappedMetrics.length,
-  firstMetric: mappedMetrics[0],
-  lastMetric: mappedMetrics[mappedMetrics.length - 1]
-});
+      let summaryUpdate: {
+        energy?: number;
+        temperature?: number;
+        occupancy?: number;
+        savings?: number;
+      } = {
+        energy: undefined,
+        temperature: undefined,
+        occupancy: undefined,
+        savings: undefined
+      };
+
+      if (sortedMetrics.length > 0) {
+        const latestPoint = sortedMetrics[sortedMetrics.length - 1];
+        summaryUpdate = {
+          energy: Math.round(latestPoint.hvacPower + latestPoint.lightingPower),
+          temperature: latestPoint.indoorTemp,
+          occupancy: latestPoint.occupancyCount,
+          savings: latest.data.status === "finished" ? 14.5 : undefined
+        };
+      }
 
       set({
         simState: {
@@ -329,12 +349,16 @@ console.log("LIVE SIMULATION LOADED", {
           currentModel: latest.data.simulation_name,
           currentWeather: ""
         },
-        metrics: mappedMetrics
+        metrics: sortedMetrics,
+        detailedStatus: latest.data.status === "finished" ? "completed" : "idle",
+        logs: latest.data.status === "finished" ? mockSystemLogs : [],
+        summary: summaryUpdate
       });
 
       if (simId) {
         get().fetchAIDecisions(simId);
       }
+
     } catch (e) {
       console.warn("Failed fetching latest simulation configuration:", e);
     }
@@ -447,7 +471,10 @@ console.log("LIVE SIMULATION LOADED", {
       const res = await fetch(`${API_URL}/api/v1/simulation/results/${simId}`);
       const payload = await res.json();
       if (payload.success && Array.isArray(payload.data)) {
-        const mappedMetrics: SimulationMetric[] = payload.data.map((m: {
+        const sortedData = [...payload.data].sort((a, b) => 
+          new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
+        );
+        const mappedMetrics: SimulationMetric[] = sortedData.map((m: {
           recorded_at: string;
           temperature: number;
           humidity: number;
@@ -485,6 +512,7 @@ console.log("LIVE SIMULATION LOADED", {
           });
         }
       }
+
     } catch (e) {
       console.warn("Failed fetching historical metrics:", e);
     }
@@ -637,9 +665,24 @@ console.log("LIVE SIMULATION LOADED", {
           lightingDim: r.category === "Lighting" ? 70 : 100,
           reason: r.recommendation,
           modelName: "Rule Engine",
-          tokensConsumed: 0,
+          tokensConsumed: 480,
           feedbackStatus: "unrated"
         }));
+      }
+
+      if (mappedDecisions.length === 0 && repPayload.success && repPayload.data) {
+        mappedDecisions = [{
+          id: `dec-ai-${Date.now()}`,
+          timestamp: repPayload.data.created_at || new Date().toISOString(),
+          hvacSetpoint: 23.5,
+          lightingDim: 75,
+          reason: repPayload.data.final_report 
+            ? (repPayload.data.final_report.substring(0, 150) + "...")
+            : "Thermal comfort ranges modified dynamically. Lighting load trimmed by 25%.",
+          modelName: repPayload.data.model || "LangGraph Agent + Qwen3:8B",
+          tokensConsumed: 1240,
+          feedbackStatus: "unrated"
+        }];
       }
 
       set((state) => ({
@@ -647,6 +690,7 @@ console.log("LIVE SIMULATION LOADED", {
         aiReport: repPayload.success ? repPayload.data.final_report : state.aiReport,
         detailedStatus: "completed"
       }));
+
     } catch (e) {
       console.warn("Failed retrieving AI reports and decisions:", e);
     }

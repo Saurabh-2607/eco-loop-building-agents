@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BarChart3, TrendingUp, Sparkles, AlertCircle } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
+import SavingsComparisonCard from "@/components/analytics/SavingsComparisonCard";
 
 export default function Analytics() {
   const { metrics } = useAppStore();
@@ -19,7 +20,10 @@ export default function Analytics() {
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Overview stats cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+        {/* New comparative metrics card */}
+        <SavingsComparisonCard />
+
         <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-zinc-500 flex items-center gap-1.5">

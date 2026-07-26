@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Play, Pause, RotateCcw, Cpu, Sliders, PlayCircle } from "lucide-react";
 import { useState, useEffect } from "react";
+import SimulationProgress from "@/components/simulation/SimulationProgress";
 
 export default function Simulation() {
   const { 
@@ -39,8 +40,12 @@ export default function Simulation() {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
       {/* Run State Panel */}
       <div className="lg:col-span-1 space-y-6">
+        {/* Live Timeline Stepper */}
+        <SimulationProgress />
+
         {/* Core Controls */}
         <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+
           <CardHeader>
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <PlayCircle className="h-4.5 w-4.5 text-zinc-500" />

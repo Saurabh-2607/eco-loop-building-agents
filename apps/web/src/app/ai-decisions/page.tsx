@@ -71,6 +71,8 @@ function MarkdownRenderer({ text }: { text: string }) {
   );
 }
 
+import AIAgentThinking from "@/components/ai-decisions/AIAgentThinking";
+
 export default function AIDecisions() {
   const { 
     decisions, 
@@ -148,6 +150,9 @@ export default function AIDecisions() {
 
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* AI Agent reasoning visualization */}
+      <AIAgentThinking />
+
       {/* 1. LangGraph Natural Language Report Card */}
       <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 overflow-hidden">
         <CardHeader className="border-b border-zinc-100 dark:border-zinc-900/60 pb-4 bg-gradient-to-r from-violet-50/50 to-indigo-50/50 dark:from-violet-950/10 dark:to-indigo-950/10 flex flex-row items-center justify-between gap-4 flex-wrap">
@@ -156,6 +161,7 @@ export default function AIDecisions() {
               <Sparkles className="h-4.5 w-4.5 text-violet-500 fill-current" />
               AI Auditor Report (LangGraph Agent)
             </CardTitle>
+
             <CardDescription>Multi-node natural language optimization evaluation</CardDescription>
           </div>
           <Button

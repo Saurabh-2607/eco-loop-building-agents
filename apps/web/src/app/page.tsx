@@ -9,6 +9,10 @@ import SystemStatus from "@/components/dashboard/SystemStatus";
 import RecentActions from "@/components/dashboard/RecentActions";
 import AIReasoningCard from "@/components/dashboard/AIReasoningCard";
 import ClosedLoopVisualization from "@/components/dashboard/ClosedLoopVisualization";
+import OnboardingModal from "@/components/dashboard/OnboardingModal";
+import EcoLoopWorkflow from "@/components/dashboard/EcoLoopWorkflow";
+import LoopStatus from "@/components/dashboard/LoopStatus";
+import NextStepAssistant from "@/components/dashboard/NextStepAssistant";
 import { useEffect } from "react";
 import { Zap, Thermometer, Users, TrendingUp } from "lucide-react";
 
@@ -26,7 +30,13 @@ export default function Dashboard() {
   const hasSavings = summary.savings !== undefined && summary.savings !== null;
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in relative">
+      {/* Onboarding Dialog */}
+      <OnboardingModal />
+
+      {/* Floating Guided Assistant */}
+      <NextStepAssistant />
+
       {/* 1. KPIs Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
@@ -65,19 +75,23 @@ export default function Dashboard() {
       {/* 2. Closed Loop Visualization */}
       <ClosedLoopVisualization />
 
-      {/* 3. Charts Row */}
+      {/* 3. Guide workflow section */}
+      <EcoLoopWorkflow />
+
+      {/* 4. Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <EnergyChart />
         <TemperatureChart />
       </div>
 
-      {/* 4. AI decisions and system status Row */}
+      {/* 5. AI decisions, System status, and Checklist Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <AIReasoningCard />
         <SystemStatus />
+        <LoopStatus />
       </div>
 
-      {/* 5. Logs & Secondary Metrics Row */}
+      {/* 6. Logs & Secondary Metrics Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <RecentActions />
         <OccupancyChart />
